@@ -34,11 +34,11 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[3]
+mode = mode_options[2]
 
 #plot_variable = 'amp ratio'
-plot_variable = 'min pert shift'
-#plot_variable = 'W'
+#plot_variable = 'min pert shift'
+plot_variable = 'W'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
 
@@ -184,6 +184,8 @@ for i in range(0,NR1):
     R1 = R1vals[i]
     if mode == 'fast-saus-surf':
         co_int = int(np.ceil(cutoff(R1) * NK / (Kmax - Kmin)))
+    elif mode == 'fast-kink-surf':
+        co_int = int(np.ceil(trans(R1) * NK / (Kmax - Kmin)))
     else:
         co_int = 0 
     for j in range(co_int,NK):
