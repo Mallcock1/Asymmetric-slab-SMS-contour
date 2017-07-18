@@ -34,10 +34,10 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[2]
+mode = mode_options[3]
 
-#plot_variable = 'amp ratio'
-plot_variable = 'min pert shift'
+#plot_variable = 'amp-ratio'
+plot_variable = 'min-pert-shift'
 #plot_variable = 'W'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
@@ -125,8 +125,8 @@ def trans(R1):
 # Set up the data
 
 #number of iternations in R1 and K
-NR1 = 50 #100
-NK = 500 #for fast kink surf #100
+NR1 = 500 #100
+NK = 500 #400 for fast kink surf? #100
 
 Kmax1 = 8. #5.
 R1max1 = 4.
@@ -135,16 +135,16 @@ R1max1 = 4.
 if mode == 'slow-kink-surf':
     Kmin = 0.01
     R1min = 0.001
-    Kmax = Kmax1
-    R1max = R1max1
+    Kmax = 3.
+    R1max = 4.
 if mode == 'slow-saus-surf':
     Kmin = 0.01
-    R1min = 0.1
-    Kmax = Kmax1
-    R1max = R1max1
+    R1min = 0.5
+    Kmax = 3.
+    R1max = 3.5
 if mode == 'fast-kink-surf':
     Kmin = 0.5
-    R1min = 1.4
+    R1min = 1.5
     Kmax = 15.
     R1max = 2.5
 if mode == 'fast-saus-surf':
@@ -193,14 +193,14 @@ for i in range(0,NR1):
         W = newton(partial(disp_rel_asym, K=K, R1=R1),W,tol=1e-5,maxiter=50)
         Wvals[i,j] = W
         print('Found solution number (' + str(i) + ',' + str(j) + ')')
-        if plot_variable == 'amp ratio':
+        if plot_variable == 'amp-ratio':
             data_set[i,j] = amp_ratio(W, Kvals[j], R1vals[i], mode)
-        elif plot_variable == 'min pert shift':
+        elif plot_variable == 'min-pert-shift':
             data_set[i,j] = min_pert_shift(W, Kvals[j], R1vals[i], mode)
         elif plot_variable == 'W':
             data_set[i,j] = W
         else:
-            print("'plot_variable' can only be 'amp ratio' or 'min pert shift'")
+            print("'plot_variable' can only be 'amp-ratio' or 'min-pert-shift'")
 
 
 for i in range(NR1):
@@ -214,18 +214,30 @@ font = {'family' : 'normal',
 
 matplotlib.rc('font', **font)
 
-def levels(data,n):
+def levels(data,plot_variable,n):
     min_level = np.floor(np.nanmin(data))
     max_level = np.ceil(np.nanmax(data))
     largest = max(abs(max_level),abs(min_level))
-    return np.linspace(-largest, largest, n)
+    if plot_variable == 'amp-ratio':
+        if 'kink' in mode:
+            return np.linspace(2 - max_level, max_level, n)
+        if 'saus' in mode:
+            return np.linspace(min_level, -2 - min_level, n)
+    elif plot_variable == 'min-pert-shift':
+        return np.linspace(-largest, largest, n)
+    elif plot_variable == 'W':
+        return np.linspace(np.nanmin(data), np.nanmax(data), n)
 
-plt.figure()
+#plt.imshow(data_set, cmap='coolwarm', origin='lower', interpolation='nearest')
 
-plt.contourf(Y, X, data_set, levels=levels(data_set,1000), 
-             cmap='coolwarm')
+fig = plt.figure()
+
+contour = plt.contourf(Y, X, data_set, levels=levels(data_set,plot_variable,1000), 
+                       cmap='RdBu')
 plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
 plt.ylabel(r'$kx_0$', fontsize=25)
+if mode == 'fast-kink-surf':
+    plt.ylim([4.,Kmax])
 #ax.xaxis.tick_top()
 #ax.xaxis.set_label_position('top') 
 
@@ -233,9 +245,11 @@ plt.ylabel(r'$kx_0$', fontsize=25)
 width = R1max - R1min
 height = Kmax - Kmin
 
-p = patches.Rectangle((R1min, Kmin), width, height, hatch='//', fill=None, zorder=-5)
 ax = plt.gca()
-ax.add_patch(p)
+rect = ax.patch
+rect.set_facecolor((0.9,0.9,0.9))
+#p = patches.Rectangle((R1min, Kmin), width, height, hatch='//', fill=None, zorder=-5)
+#ax.add_patch(p)
 
 
 def fmt(x, pos):
@@ -245,3 +259,7 @@ cbar = plt.colorbar(format=matplotlib.ticker.FuncFormatter(fmt))
 #cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
 plt.tight_layout()
 plt.show()
+
+filename = mode + '_' + plot_variable
+plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+            + filename)
