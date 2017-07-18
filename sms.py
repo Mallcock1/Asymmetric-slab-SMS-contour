@@ -37,8 +37,8 @@ for mode in mode_options:
 mode = mode_options[2]
 
 #plot_variable = 'amp ratio'
-#plot_variable = 'min pert shift'
-plot_variable = 'W'
+plot_variable = 'min pert shift'
+#plot_variable = 'W'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
 
@@ -125,8 +125,8 @@ def trans(R1):
 # Set up the data
 
 #number of iternations in R1 and K
-NR1 = 100 #100
-NK = 100 #100
+NR1 = 50 #100
+NK = 500 #for fast kink surf #100
 
 Kmax1 = 8. #5.
 R1max1 = 4.
@@ -143,12 +143,12 @@ if mode == 'slow-saus-surf':
     Kmax = Kmax1
     R1max = R1max1
 if mode == 'fast-kink-surf':
-    Kmin = 4.2
-    R1min = 0.1
-    Kmax = 6.
-    R1max = R1max1
+    Kmin = 0.5
+    R1min = 1.4
+    Kmax = 15.
+    R1max = 2.5
 if mode == 'fast-saus-surf':
-    Kmin = 0.6
+    Kmin = 0.1 # 0.6
     R1min = 1.5
     Kmax = Kmax1
     R1max = 2.5
@@ -187,7 +187,7 @@ for i in range(0,NR1):
     elif mode == 'fast-kink-surf':
         co_int = int(np.ceil(trans(R1) * NK / (Kmax - Kmin)))
     else:
-        co_int = 0 
+        co_int = 0
     for j in range(co_int,NK):
         K = Kvals[j]
         W = newton(partial(disp_rel_asym, K=K, R1=R1),W,tol=1e-5,maxiter=50)
@@ -205,7 +205,7 @@ for i in range(0,NR1):
 
 for i in range(NR1):
     for j in range(NK):
-        if abs(data_set[i,j]) == np.inf: # WHY WONT THIS WORKK>>>>!!!???
+        if abs(data_set[i,j]) == np.inf:
                 data_set[i,j] = np.nan
         
 font = {'family' : 'normal',
@@ -217,7 +217,8 @@ matplotlib.rc('font', **font)
 def levels(data,n):
     min_level = np.floor(np.nanmin(data))
     max_level = np.ceil(np.nanmax(data))
-    return np.linspace(min_level, max_level, n)
+    largest = max(abs(max_level),abs(min_level))
+    return np.linspace(-largest, largest, n)
 
 plt.figure()
 
