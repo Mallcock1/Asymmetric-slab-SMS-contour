@@ -12,6 +12,7 @@ from functools import partial
 import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.patches as patches
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # SBS
 # Define the sound speeds and alfven speeds.
@@ -34,7 +35,7 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[3]
+mode = mode_options[0]
 
 #plot_variable = 'amp-ratio'
 plot_variable = 'min-pert-shift'
@@ -125,8 +126,8 @@ def trans(R1):
 # Set up the data
 
 #number of iternations in R1 and K
-NR1 = 500 #100
-NK = 500 #400 for fast kink surf? #100
+NR1 = 50 #100
+NK = 50 #400 for fast kink surf? #100
 
 Kmax1 = 8. #5.
 R1max1 = 4.
@@ -214,52 +215,67 @@ font = {'family' : 'normal',
 
 matplotlib.rc('font', **font)
 
-def levels(data,plot_variable,n):
+def clim(data,plot_variable):
     min_level = np.floor(np.nanmin(data))
     max_level = np.ceil(np.nanmax(data))
     largest = max(abs(max_level),abs(min_level))
     if plot_variable == 'amp-ratio':
         if 'kink' in mode:
-            return np.linspace(2 - max_level, max_level, n)
+            return [2 - max_level, max_level]
         if 'saus' in mode:
-            return np.linspace(min_level, -2 - min_level, n)
+            return [min_level, -2 - min_level]
     elif plot_variable == 'min-pert-shift':
-        return np.linspace(-largest, largest, n)
+        return [-largest, largest]
     elif plot_variable == 'W':
-        return np.linspace(np.nanmin(data), np.nanmax(data), n)
+        return [np.nanmin(data), np.nanmax(data)]
 
-#plt.imshow(data_set, cmap='coolwarm', origin='lower', interpolation='nearest')
 
 fig = plt.figure()
-
-contour = plt.contourf(Y, X, data_set, levels=levels(data_set,plot_variable,1000), 
-                       cmap='RdBu')
-plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
-plt.ylabel(r'$kx_0$', fontsize=25)
-if mode == 'fast-kink-surf':
-    plt.ylim([4.,Kmax])
-#ax.xaxis.tick_top()
-#ax.xaxis.set_label_position('top') 
-
-# get data you will need to create a "background patch" to your plot
-width = R1max - R1min
-height = Kmax - Kmin
-
-ax = plt.gca()
-rect = ax.patch
-rect.set_facecolor((0.9,0.9,0.9))
-#p = patches.Rectangle((R1min, Kmin), width, height, hatch='//', fill=None, zorder=-5)
-#ax.add_patch(p)
-
+aspect = 1#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
+im = plt.imshow(data_set.transpose(), cmap='RdBu', origin='lower', clim=clim(data_set,plot_variable), 
+                aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 
 def fmt(x, pos):
     a = '{:.1f}'.format(x)
     return a
-cbar = plt.colorbar(format=matplotlib.ticker.FuncFormatter(fmt))
 #cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
-plt.tight_layout()
-plt.show()
+cb = plt.colorbar(im, fraction=0.046*aspect, pad=0.04, 
+                  format=matplotlib.ticker.FuncFormatter(fmt))
 
+
+plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
+plt.ylabel(r'$kx_0$', fontsize=25)
+if mode == 'fast-kink-surf':
+    plt.ylim([4.,Kmax])
+##ax.xaxis.tick_top()
+##ax.xaxis.set_label_position('top') 
+#
+# get data you will need to create a "background patch" to your plot
+width = R1max - R1min
+height = Kmax - Kmin
+
+# set background colour - NaNs have this colour
+ax = plt.gca()
+rect = ax.patch
+rect.set_facecolor((0.9,0.9,0.9))
+
+def pad(data):
+    ppad = 38
+    mpad = 40
+    size_bool = np.where(data < 0)[0].size == 0
+    if size_bool:
+        p = ppad
+    else:
+        p = mpad
+    return p
+        
+ticklabs = cb.ax.get_yticklabels()
+cb.ax.set_yticklabels(ticklabs,ha='right')
+cb.ax.yaxis.set_tick_params(pad=pad(data_set))  # your number may vary
+
+#plt.tight_layout()
+plt.show()
+#
 filename = mode + '_' + plot_variable
 plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
             + filename)
