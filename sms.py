@@ -242,6 +242,11 @@ def fmt(x, pos):
 cb = plt.colorbar(im, fraction=0.046*aspect, pad=0.04, 
                   format=matplotlib.ticker.FuncFormatter(fmt))
 
+#try this bad boyyy 19/7/17::
+#cax = divider.append_axes("right", size="5%", pad=0.05, aspect=10)
+##cax = fig.add_axes([0.85, 0.3, 0.04, 0.4])
+#plt.colorbar(im, cax=cax)
+
 
 plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
 plt.ylabel(r'$kx_0$', fontsize=25)
