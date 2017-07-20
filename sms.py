@@ -35,10 +35,10 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[0]
+mode = mode_options[1]
 
 #plot_variable = 'amp-ratio'
-plot_variable = 'min-pert-shift'
+#plot_variable = 'min-pert-shift'
 #plot_variable = 'W'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
@@ -135,9 +135,9 @@ R1max1 = 4.
 #initial and final K and R1 values
 if mode == 'slow-kink-surf':
     Kmin = 0.01
-    R1min = 0.001
+    R1min = 0.5 #0.001
     Kmax = 3.
-    R1max = 4.
+    R1max = 3.5 #4.
 if mode == 'slow-saus-surf':
     Kmin = 0.01
     R1min = 0.5
@@ -229,23 +229,16 @@ def clim(data,plot_variable):
     elif plot_variable == 'W':
         return [np.nanmin(data), np.nanmax(data)]
 
+if plot_variable == 'amp-ratio' or plot_variable == 'W':
+    cmap = 'RdBu'
+else:
+    cmap = 'RdBu'
 
 fig = plt.figure()
-aspect = 1#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
-im = plt.imshow(data_set.transpose(), cmap='RdBu', origin='lower', clim=clim(data_set,plot_variable), 
+aspect = 'auto'#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
+im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', clim=clim(data_set,plot_variable), 
                 aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
-
-def fmt(x, pos):
-    a = '{:.1f}'.format(x)
-    return a
-#cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
-cb = plt.colorbar(im, fraction=0.046*aspect, pad=0.04, 
-                  format=matplotlib.ticker.FuncFormatter(fmt))
-
-#try this bad boyyy 19/7/17::
-#cax = divider.append_axes("right", size="5%", pad=0.05, aspect=10)
-##cax = fig.add_axes([0.85, 0.3, 0.04, 0.4])
-#plt.colorbar(im, cax=cax)
+ax = plt.gca()
 
 
 plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
@@ -260,7 +253,6 @@ width = R1max - R1min
 height = Kmax - Kmin
 
 # set background colour - NaNs have this colour
-ax = plt.gca()
 rect = ax.patch
 rect.set_facecolor((0.9,0.9,0.9))
 
@@ -273,14 +265,25 @@ def pad(data):
     else:
         p = mpad
     return p
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="7.5%", pad=0.2, aspect=13.33)
+
+def fmt(x, pos):
+    a = '{:.1f}'.format(x)
+    return a
+#cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
+cb = plt.colorbar(im, cax=cax, 
+                  format=matplotlib.ticker.FuncFormatter(fmt))
         
 ticklabs = cb.ax.get_yticklabels()
 cb.ax.set_yticklabels(ticklabs,ha='right')
 cb.ax.yaxis.set_tick_params(pad=pad(data_set))  # your number may vary
 
+plt.gcf().subplots_adjust(bottom=0.15)
 #plt.tight_layout()
 plt.show()
-#
+
 filename = mode + '_' + plot_variable
 plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
             + filename)
