@@ -113,17 +113,20 @@ def min_pert_shift(W, K, vA, mode):
         print(error_string_kink_saus)
     return shiftfunction
     
+def min_pert_shift_func(W, K, vA, mode, DM):
+    return min_pert_shift(W, K, vA, mode) - DM
+    
 ###############################################################################
 # Set up the data
 
 #number of iternations in RA or Delta min
 NRA = 50
-NDM = 50
+NDM = 5
 
 RAmin = 1.01
-DMmin = -0.5
+DMmin = -0.5074
 RAmax = 1.05
-DMmax = 0.05
+DMmax = -0.5072
 
 
 Wfix = 0.3
@@ -141,7 +144,23 @@ for i in range(0,NRA):
         vAvals[i] == np.NaN
     print('Found solution number ' + str(i) + ' out of ' + str(NRA))
 
+fig = plt.figure()
 plt.plot(RAvals, vAvals)
+
+
+DMvals = np.linspace(DMmin,DMmax,NDM)
+vAvals = np.zeros(NDM)
+vA_guess = 1.3
+for i in range(0,NDM):
+#    if i != 0:
+#        vA_guess = vAvals[i-1]
+    vAvals[i] = newton(partial(min_pert_shift_func, W, K, mode=mode, DM=DMvals[i]),vA_guess,tol=1e-5,maxiter=50)
+    if vAvals[i] > 5:
+        vAvals[i] == np.NaN
+    print('Found solution number ' + str(i) + ' out of ' + str(NDM))
+
+fig = plt.figure()
+plt.plot(DMvals, vAvals)
 
 
         
