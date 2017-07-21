@@ -25,7 +25,7 @@ R1 = 1.5
 c1 = c2*np.sqrt(R2/R1)
 
 K = 1.
-W = 0.3
+W = 0.6
 
 mode_options = ['slow-kink-surf', 'slow-saus-surf', 'fast-kink-surf',
                 'fast-saus-surf']
@@ -64,16 +64,16 @@ def m2(W):
 def disp_rel_sym(W, K, vA, mode, subscript):
     if subscript == 1:
         if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m1(W, R1)*sc.tanh(m0(W)*K) - R1*W**2*m0(W)
+            dispfunction = (vA**2 - W**2)*m1(W)*sc.tanh(m0(W,vA)*K) - R1*W**2*m0(W,vA)
         elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m1(W, R1) - R1*W**2*m0(W)*sc.tanh(m0(W)*K)
+            dispfunction = (vA**2 - W**2)*m1(W) - R1*W**2*m0(W,vA)*sc.tanh(m0(W,vA)*K)
         else:
             print(error_string_kink_saus)
     elif subscript == 2:
         if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W)*K) - R1*W**2*m0(W)
+            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W,vA)*K) - R1*W**2*m0(W,vA)
         elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W) - R1*W**2*m0(W)*sc.tanh(m0(W)*K)
+            dispfunction = (vA**2 - W**2)*m2(W) - R1*W**2*m0(W,vA)*sc.tanh(m0(W,vA)*K)
         else:
             print(error_string_kink_saus)
     else:
@@ -81,26 +81,34 @@ def disp_rel_sym(W, K, vA, mode, subscript):
     return dispfunction
     
 def disp_rel_asym(W, K, vA):
-    return ((W**4 * m0(W)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W,R1) * m2(W) -
-            0.5 * m0(W) * W**2 * (vA**2 - W**2) * (R2 * m1(W,R1) + R1 * m2(W)) *
-            (sc.tanh(m0(W) * K) + (sc.tanh(m0(W) * K))**(-1))) /
+    return ((W**4 * m0(W,vA)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W) * m2(W) -
+            0.5 * m0(W,vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W) + R1 * m2(W)) *
+            (sc.tanh(m0(W,vA) * K) + (sc.tanh(m0(W,vA) * K))**(-1))) /
             (vA**2 - W**2) * (c0**2 - W**2) * (cT(vA)**2 - W**2))
     
 def amp_ratio(W, K, vA, mode):
     if mode in kink_mode_options:
-        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W,R1)*disp_rel_sym(W,K,vA,'saus',2))
+        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2))
     elif mode in saus_mode_options:
-        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W,R1)*disp_rel_sym(W,K,vA,'kink',2))
+        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2))
     else:
         print(error_string_kink_saus)
     return ampfunction
     
+def amp_ratio_func(W, K, vA, mode, RA):
+    if mode in kink_mode_options:
+        return m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2)) - RA
+    elif mode in saus_mode_options:
+        return - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2)) - RA
+    else:
+        print(error_string_kink_saus)
+    
 def min_pert_shift(W, K, vA, mode):
     if mode in kink_mode_options:
-        shiftfunction = (1 / m0(W)) * sc.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
+        shiftfunction = (1 / m0(W,vA)) * sc.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
     elif mode in saus_mode_options:
         # recall that arccoth(x) = arctanh(1/x)
-        shiftfunction = (1 / m0(W)) * sc.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
+        shiftfunction = (1 / m0(W,vA)) * sc.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
     else:
         print(error_string_kink_saus)
     return shiftfunction
@@ -112,19 +120,28 @@ def min_pert_shift(W, K, vA, mode):
 NRA = 50
 NDM = 50
 
-RAmin = 0.5
+RAmin = 1.01
 DMmin = -0.5
-RAmax = 1.5
-DMmax = 0.5
+RAmax = 1.05
+DMmax = 0.05
 
+
+Wfix = 0.3
+Kfix = 1.
+modefix = mode
 
 RAvals = np.linspace(RAmin,RAmax,NRA)
 vAvals = np.zeros(NRA)
 vA_guess = 1.3
 for i in range(0,NRA):
-    vAvals[i] = newton(partial(disp_rel_asym, W=W, K=K),vA_guess,tol=1e-5,maxiter=50)
+#    if i != 0:
+#        vA_guess = vAvals[i-1]
+    vAvals[i] = newton(partial(amp_ratio_func, W, K, mode=mode, RA=RAvals[i]),vA_guess,tol=1e-5,maxiter=50)
+    if vAvals[i] > 5:
+        vAvals[i] == np.NaN
+    print('Found solution number ' + str(i) + ' out of ' + str(NRA))
 
-plt.plot(vAvals)
+plt.plot(RAvals, vAvals)
 
 
         
