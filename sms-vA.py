@@ -39,10 +39,13 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[0]
+mode = mode_options[1]
 
 method = 'amp-ratio'
 method = 'min-pert-shift'
+
+show_scatter = False
+#show_scatter = True
 
 ###############################################################################
 
@@ -111,134 +114,99 @@ def min_pert_shift(W, K, vA, mode):
         shiftfunction = (1 / m0(W,vA)) * sc.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
     else:
         print(error_string_kink_saus)
-    return shiftfunction
+    return np.real(shiftfunction)
     
 def min_pert_shift_func(W, K, vA, mode, DM):
     return min_pert_shift(W, K, vA, mode) - DM
     
 ###############################################################################
 # Set up the data
-
 #number of iternations in RA or Delta min
-NRA = 50
-NDM = 5
+NRA = 500
+NDM = 500
 
-RAmin = 1.01
-DMmin = -0.5074
-RAmax = 1.05
-DMmax = -0.5072
-
+RAmin = [0.98, 1.0005, -1.0005, -0.97, -0.88]
+DMmin = -0.9999999
+RAmax = [0.3, 2., -2., 1.5, -0.97345]
+DMmax = 1.
+vA_guess_list = [0.1, 1.3, 1.3, 0.8, 0.697]
 
 Wfix = 0.3
 Kfix = 1.
-modefix = mode
+modes = [0,1]
 
-RAvals = np.linspace(RAmin,RAmax,NRA)
-vAvals = np.zeros(NRA)
-vA_guess = 1.3
-for i in range(0,NRA):
-#    if i != 0:
-#        vA_guess = vAvals[i-1]
-    vAvals[i] = newton(partial(amp_ratio_func, W, K, mode=mode, RA=RAvals[i]),vA_guess,tol=1e-5,maxiter=50)
-    if vAvals[i] > 5:
-        vAvals[i] == np.NaN
-    print('Found solution number ' + str(i) + ' out of ' + str(NRA))
+branches = [2,3]
 
 fig = plt.figure()
-plt.plot(RAvals, vAvals)
-
-
-DMvals = np.linspace(DMmin,DMmax,NDM)
-vAvals = np.zeros(NDM)
-vA_guess = 1.3
-for i in range(0,NDM):
-#    if i != 0:
-#        vA_guess = vAvals[i-1]
-    vAvals[i] = newton(partial(min_pert_shift_func, W, K, mode=mode, DM=DMvals[i]),vA_guess,tol=1e-5,maxiter=50)
-    if vAvals[i] > 5:
-        vAvals[i] == np.NaN
-    print('Found solution number ' + str(i) + ' out of ' + str(NDM))
-
-fig = plt.figure()
-plt.plot(DMvals, vAvals)
-
-
+for mode_ind in modes:
+    for b in range(branches[mode_ind]):
+        mode = mode_options[mode_ind]
+        nb = sum(branches[:mode_ind]) + b
         
-#font = {'family' : 'normal',
-#        'weight' : 'light',
-#        'size'   : 18}
-#
-#matplotlib.rc('font', **font)
-#
-#def clim(data,plot_variable):
-#    min_level = np.floor(np.nanmin(data))
-#    max_level = np.ceil(np.nanmax(data))
-#    largest = max(abs(max_level),abs(min_level))
-#    if plot_variable == 'amp-ratio':
-#        if 'kink' in mode:
-#            return [2 - max_level, max_level]
-#        if 'saus' in mode:
-#            return [min_level, -2 - min_level]
-#    elif plot_variable == 'min-pert-shift':
-#        return [-largest, largest]
-#    elif plot_variable == 'W':
-#        return [np.nanmin(data), np.nanmax(data)]
-#
-#if plot_variable == 'amp-ratio' or plot_variable == 'W':
-#    cmap = 'RdBu'
-#else:
-#    cmap = 'RdBu'
+        RAvals = np.linspace(RAmin[nb], RAmax[nb], NRA)
+        vAvals = np.zeros(NRA)
+        vA_guess_init = vA_guess_list[nb]
+        vA_guess = vA_guess_init
+        for i in range(0,NRA):
+            if i != 0:
+                if vAvals[i-1] < 100:
+                    vA_guess = vAvals[i-1]
+                else:
+                    va_guess = vA_guess_init
+            vAvals[i] = newton(partial(amp_ratio_func, W, K, mode=mode, RA=RAvals[i]),vA_guess,tol=1e-5,maxiter=50)
+            if vAvals[i] > 5:
+                vAvals[i] = np.NaN
+            print('Found solution number ' + str(i) + ' out of ' + str(NRA))
+        plt.plot(RAvals, vAvals)
+
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c1,c1],'k-.')
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c0,c0],'k-.')
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c2,c2],'k-.')
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [W,W],'k-.')
+
+#DMvals = np.linspace(DMmin,DMmax,NDM)
+#vAvals = np.zeros(NDM)
+#vA_guess = 1.3
+#for i in range(0,NDM):
+#    if i != 0:
+#        if vAvals[i-1] < 100:
+#            vA_guess = vAvals[i-1]
+#        else:
+#            va_guess = 1.3
+#    vAvals[i] = newton(partial(min_pert_shift_func, W, K, mode=mode, DM=DMvals[i]),vA_guess,tol=1e-5,maxiter=50)
+#    if abs(vAvals[i]) > 5:
+#        vAvals[i] = np.NaN
+#    print('Found solution number ' + str(i) + ' out of ' + str(NDM))
 #
 #fig = plt.figure()
-#aspect = 'auto'#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
-#im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', clim=clim(data_set,plot_variable), 
-#                aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
-#ax = plt.gca()
-#
-#
-#plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
-#plt.ylabel(r'$kx_0$', fontsize=25)
-#if mode == 'fast-kink-surf':
-#    plt.ylim([4.,Kmax])
-###ax.xaxis.tick_top()
-###ax.xaxis.set_label_position('top') 
-##
-## get data you will need to create a "background patch" to your plot
-#width = R1max - R1min
-#height = Kmax - Kmin
-#
-## set background colour - NaNs have this colour
-#rect = ax.patch
-#rect.set_facecolor((0.9,0.9,0.9))
-#
-#def pad(data):
-#    ppad = 38
-#    mpad = 40
-#    size_bool = np.where(data < 0)[0].size == 0
-#    if size_bool:
-#        p = ppad
-#    else:
-#        p = mpad
-#    return p
-#
-#divider = make_axes_locatable(ax)
-#cax = divider.append_axes("right", size="7.5%", pad=0.2, aspect=13.33)
-#
-#def fmt(x, pos):
-#    a = '{:.1f}'.format(x)
-#    return a
-##cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
-#cb = plt.colorbar(im, cax=cax, 
-#                  format=matplotlib.ticker.FuncFormatter(fmt))
-#        
-#ticklabs = cb.ax.get_yticklabels()
-#cb.ax.set_yticklabels(ticklabs,ha='right')
-#cb.ax.yaxis.set_tick_params(pad=pad(data_set))  # your number may vary
-#
-#plt.gcf().subplots_adjust(bottom=0.15)
-##plt.tight_layout()
-#plt.show()
-#
-#filename = mode + '_' + plot_variable
-#plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
-#            + filename)
+#plt.plot(DMvals, vAvals)
+
+
+if show_scatter == True:
+    NRA = 500
+    NvA = 500
+    
+    RAmin = -0.8
+    RAmax = -1.1
+    vAmin = 0.3
+    vAmax = 1.2
+    
+    RA_scatter_vals = np.linspace(RAmin, RAmax, NRA)
+    vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
+    
+    vA = np.zeros(NRA * NvA)
+    RA = np.zeros(NRA * NvA)
+    vA[:] = np.NAN
+    RA[:] = np.NAN
+    
+    a=0
+    for i in range(0,NRA):
+        for j in range(0,NvA):
+            if abs(amp_ratio_func(W, K, vA_scatter_vals[i], mode, RA_scatter_vals[j])) < 0.01:
+                vA[a] = vA_scatter_vals[i]
+                RA[a] = RA_scatter_vals[j]
+                a=a+1
+    
+    plt.figure()
+    plt.scatter(RA, vA, marker='.')    
+    
