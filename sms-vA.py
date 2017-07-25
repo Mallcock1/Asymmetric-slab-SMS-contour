@@ -16,7 +16,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # SBS
 # Define the sound speeds and alfven speeds.
-c2 = 2. #1.2
+c2 = 1.2 #1.2
 c0 = 1.
 def cT(vA):
     return sc.sqrt(c0**2*vA**2*(c0**2+vA**2)**(-1))
@@ -44,8 +44,8 @@ mode = mode_options[1]
 method = 'amp-ratio'
 method = 'min-pert-shift'
 
-#show_scatter = False
-show_scatter = True
+show_scatter = False
+#show_scatter = True
 
 ###############################################################################
 
@@ -122,47 +122,47 @@ def min_pert_shift_func(W, K, vA, mode, DM):
 ###############################################################################
 # Set up the data
 #number of iternations in RA or Delta min
-NRA = 100
-NDM = 100
+NRA = 500
+NDM = 500
 
-RAmin = [0.98, 1.0005, -1.0005, -0.97, -0.88]
+RAmin = [0.98, 1.0005, 0.9, -1.0005, -0.97, -0.88]
 DMmin = -0.9999999
-RAmax = [0.3, 2., -2., 1.5, -0.97345]
+RAmax = [0.3, 2., 0.6, -2., 1.5, -0.97345]
 DMmax = 1.
-vA_guess_list = [0.1, 1.3, 1.3, 0.8, 0.697]
+vA_guess_list = [0.1, 1.3, 0.9, 1.3, 0.8, 0.697]
 
 Wfix = 0.3
 Kfix = 1.
 modes = [0,1]
 
-branches = [2,3]
+branches = [3,3]
 
-#fig = plt.figure()
-#for mode_ind in modes:
-#    for b in range(branches[mode_ind]):
-#        mode = mode_options[mode_ind]
-#        nb = sum(branches[:mode_ind]) + b
-#        
-#        RAvals = np.linspace(RAmin[nb], RAmax[nb], NRA)
-#        vAvals = np.zeros(NRA)
-#        vA_guess_init = vA_guess_list[nb]
-#        vA_guess = vA_guess_init
-#        for i in range(0,NRA):
-#            if i != 0:
-#                if vAvals[i-1] < 100:
-#                    vA_guess = vAvals[i-1]
-#                else:
-#                    va_guess = vA_guess_init
-#            vAvals[i] = newton(partial(amp_ratio_func, W, K, mode=mode, RA=RAvals[i]),vA_guess,tol=1e-5,maxiter=50)
-#            if vAvals[i] > 5:
-#                vAvals[i] = np.NaN
-#            print('Found solution number ' + str(i) + ' out of ' + str(NRA))
-#        plt.plot(RAvals, vAvals)
-#
-#plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c1,c1],'k-.')
-#plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c0,c0],'k-.')
-#plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c2,c2],'k-.')
-#plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [W,W],'k-.')
+fig = plt.figure()
+for mode_ind in modes:
+    for b in range(branches[mode_ind]):
+        mode = mode_options[mode_ind]
+        nb = sum(branches[:mode_ind]) + b
+        
+        RAvals = np.linspace(RAmin[nb], RAmax[nb], NRA)
+        vAvals = np.zeros(NRA)
+        vA_guess_init = vA_guess_list[nb]
+        vA_guess = vA_guess_init
+        for i in range(0,NRA):
+            if i != 0:
+                if vAvals[i-1] < 100:
+                    vA_guess = vAvals[i-1]
+                else:
+                    va_guess = vA_guess_init
+            vAvals[i] = newton(partial(amp_ratio_func, W, K, mode=mode, RA=RAvals[i]),vA_guess,tol=1e-5,maxiter=50)
+            if vAvals[i] > 5:
+                vAvals[i] = np.NaN
+            print('Found solution number ' + str(i) + ' out of ' + str(NRA))
+        plt.plot(RAvals, vAvals)
+
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c1,c1],'k-.')
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c0,c0],'k-.')
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c2,c2],'k-.')
+plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [W,W],'k-.')
 
 #DMvals = np.linspace(DMmin,DMmax,NDM)
 #vAvals = np.zeros(NDM)
@@ -194,21 +194,20 @@ if show_scatter == True:
     RA_scatter_vals = np.linspace(RAmin, RAmax, NRA)
     vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
     
-    vA = np.zeros(NRA * NvA)
-    RA = np.zeros(NRA * NvA)
-    vA[:] = np.NAN
-    RA[:] = np.NAN
-    
-    a=0
-    for i in range(0,NRA):
-        for j in range(0,NvA):
-            if abs(amp_ratio_func(W, K, vA_scatter_vals[i], mode, RA_scatter_vals[j])) < 0.01:
-                vA[a] = vA_scatter_vals[i]
-                RA[a] = RA_scatter_vals[j]
-                a=a+1
-    
-    plt.figure()
-    plt.scatter(RA, vA, marker='.')
-    plt.ylim([0.2, 1.6])
-    plt.xlim([-2., 0.])
+#    plt.figure()
+    for mode in ['slow-kink-surf', 'slow-saus-surf']:
+        vA = np.zeros(NRA * NvA)
+        RA = np.zeros(NRA * NvA)
+        vA[:] = np.NAN
+        RA[:] = np.NAN        
+        a=0
+        for i in range(0,NRA):
+            for j in range(0,NvA):
+                if abs(amp_ratio_func(W, K, vA_scatter_vals[i], mode, RA_scatter_vals[j])) < 0.01:
+                    vA[a] = vA_scatter_vals[i]
+                    RA[a] = RA_scatter_vals[j]
+                    a=a+1
+        plt.scatter(RA, vA, marker='.')
+#    plt.ylim([0.2, 1.6])
+#    plt.xlim([-2., 2.])
     

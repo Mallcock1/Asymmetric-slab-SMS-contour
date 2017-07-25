@@ -23,9 +23,9 @@ def cT(vA):
 R2 = 2.
 R1 = 1.5
 def c2(vA):
-    return np.sqrt(1/R2 * (c0**2 + 5 / 6 * vA**2))
+    return np.sqrt(1/R2 * (c0**2 + 5 / 6. * vA**2))
 def c1(vA):
-    return np.sqrt(1/R1 * (c0**2 + 5 / 6 * vA**2))
+    return np.sqrt(1/R1 * (c0**2 + 5 / 6. * vA**2))
 
 K = 1.
 W = 0.6
@@ -207,7 +207,7 @@ if show_scatter == True:
         a=0
         for i in range(0,NRA):
             for j in range(0,NvA):
-                if abs(amp_ratio_func(W, K, vA_scatter_vals[i], mode, RA_scatter_vals[j])) < 0.01:
+                if abs(amp_ratio_func(W, K, vA_scatter_vals[i], mode, RA_scatter_vals[j])) < 0.03:
                     vA[a] = vA_scatter_vals[i]
                     RA[a] = RA_scatter_vals[j]
                     a=a+1
