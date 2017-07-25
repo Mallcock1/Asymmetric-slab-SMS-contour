@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import toolbox as tool
 
 # SBS
 # Define the sound speeds and alfven speeds.
@@ -39,7 +40,7 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[1]
+mode = mode_options[0]
 
 method = 'amp-ratio'
 method = 'min-pert-shift'
@@ -98,7 +99,7 @@ def amp_ratio(W, K, vA, mode):
         print(error_string_kink_saus)
     return ampfunction
     
-def amp_ratio_func(W, K, vA, mode, RA):
+def amp_ratio_func(W, K, mode, vA, RA):
     if mode in kink_mode_options:
         return m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2)) - RA
     elif mode in saus_mode_options:
@@ -125,61 +126,36 @@ def min_pert_shift_func(W, K, vA, mode, DM):
 NRA = 500
 NDM = 500
 
-RAmin = [0.98, 1.0005, 0.9, -1.0005, -0.97, -0.88]
-DMmin = -0.9999999
-RAmax = [0.3, 2., 0.6, -2., 1.5, -0.97345]
-DMmax = 1.
-vA_guess_list = [0.1, 1.3, 0.9, 1.3, 0.8, 0.697]
+RAmin = [0.9703, 1.005, -2., -2., -0.961, -0.97348]
+RAmax = [0.9812, 2., 0.96, -1.01, 2., -0.9608]
 
-Wfix = 0.3
-Kfix = 1.
+RA_guess = [0.971, 1.2, 0.88, -1.1, -0.8, -0.96]
+vA_guess = [0.55, 1.04, 0.9, 1.26, 1.04, 0.26]
+
+step = [0.0001, 0.0005, 0.001, 0.001, 0.001, 0.00002]
+
 modes = [0,1]
 
 branches = [3,3]
 
-fig = plt.figure()
+styles = ['--'] * 3 + ['-'] * 3
+
+plt.figure()
 for mode_ind in modes:
     for b in range(branches[mode_ind]):
         mode = mode_options[mode_ind]
         nb = sum(branches[:mode_ind]) + b
         
-        RAvals = np.linspace(RAmin[nb], RAmax[nb], NRA)
-        vAvals = np.zeros(NRA)
-        vA_guess_init = vA_guess_list[nb]
-        vA_guess = vA_guess_init
-        for i in range(0,NRA):
-            if i != 0:
-                if vAvals[i-1] < 100:
-                    vA_guess = vAvals[i-1]
-                else:
-                    va_guess = vA_guess_init
-            vAvals[i] = newton(partial(amp_ratio_func, W, K, mode=mode, RA=RAvals[i]),vA_guess,tol=1e-5,maxiter=50)
-            if vAvals[i] > 5:
-                vAvals[i] = np.NaN
-            print('Found solution number ' + str(i) + ' out of ' + str(NRA))
-        plt.plot(RAvals, vAvals)
-
-plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c1,c1],'k-.')
-plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c0,c0],'k-.')
-plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [c2,c2],'k-.')
-plt.plot([min(RAmin + RAmax), max(RAmin + RAmax)], [W,W],'k-.')
-
-#DMvals = np.linspace(DMmin,DMmax,NDM)
-#vAvals = np.zeros(NDM)
-#vA_guess = 1.3
-#for i in range(0,NDM):
-#    if i != 0:
-#        if vAvals[i-1] < 100:
-#            vA_guess = vAvals[i-1]
-#        else:
-#            va_guess = 1.3
-#    vAvals[i] = newton(partial(min_pert_shift_func, W, K, mode=mode, DM=DMvals[i]),vA_guess,tol=1e-5,maxiter=50)
-#    if abs(vAvals[i]) > 5:
-#        vAvals[i] = np.NaN
-#    print('Found solution number ' + str(i) + ' out of ' + str(NDM))
-#
-#fig = plt.figure()
-#plt.plot(DMvals, vAvals)
+        RA_values, root_array = tool.line_trace(partial(amp_ratio_func, W, K, mode), RA_guess[nb], 
+                                                vA_guess[nb], step[nb], RAmin[nb], RAmax[nb], (None))
+        plt.plot(RA_values, root_array, linestyle=styles[nb], color='black')
+        
+ax = plt.gca()
+ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, 
+                edgecolor='gray', linestyle='-.', color='None', hatch='/', linewidth=2)
+ax.set_ylabel(r'$v_A$', fontsize = 20)
+ax.set_xlabel(r'$R_A$', fontsize = 20)
+plt.ylim([0.,2.])
 
 
 if show_scatter == True:
@@ -188,13 +164,13 @@ if show_scatter == True:
     
     RAmin = -2.
     RAmax = 2.
-    vAmin = 0.3
-    vAmax = 1.5
+    vAmin = 1.5
+    vAmax = 0.
     
     RA_scatter_vals = np.linspace(RAmin, RAmax, NRA)
     vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
     
-#    plt.figure()
+    plt.figure()
     for mode in ['slow-kink-surf', 'slow-saus-surf']:
         vA = np.zeros(NRA * NvA)
         RA = np.zeros(NRA * NvA)
@@ -203,7 +179,7 @@ if show_scatter == True:
         a=0
         for i in range(0,NRA):
             for j in range(0,NvA):
-                if abs(amp_ratio_func(W, K, vA_scatter_vals[i], mode, RA_scatter_vals[j])) < 0.01:
+                if abs(amp_ratio_func(W, K, mode, vA_scatter_vals[i], RA_scatter_vals[j])) < 0.01:
                     vA[a] = vA_scatter_vals[i]
                     RA[a] = RA_scatter_vals[j]
                     a=a+1

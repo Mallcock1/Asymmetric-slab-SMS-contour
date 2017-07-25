@@ -122,7 +122,7 @@ def line_trace(func, x, y, step_size, x_end_left, x_end_right, args=None):
         args = [None]
     x_values = []
     root_list = []
-    while x > x_end_left:
+    while x >= x_end_left:
         out = []
         for a in args:
             if a is None:
@@ -132,6 +132,8 @@ def line_trace(func, x, y, step_size, x_end_left, x_end_right, args=None):
         flip_f = partial(flip, *out[::-1])
         x_values, root_list = root_find(flip_f, root_list, x, y, -step_size, x_values)
         x -= step_size
+    print(len(x_values))
+    print(x)
     x = x_values[-1] + step_size
     x_values_new = []
     root_list_new = []
