@@ -38,18 +38,17 @@ for mode in mode_options:
 
 mode = mode_options[0]
 
-method = 'amp-ratio'
-method = 'min-pert-shift'
-
 show_RA = False
 show_DM = False
 show_scatter_RA = False
 show_scatter_DM = False
+show_scatter_DM_2 = False
 
-#show_RA = True
+show_RA = True
 show_DM = True
 #show_scatter_RA = True
 #show_scatter_DM = True
+#show_scatter_DM_2 = True
 
 ###############################################################################
 
@@ -112,16 +111,29 @@ def amp_ratio_func(W, K, mode, vA, RA):
     
 def min_pert_shift(W, K, vA, mode):
     if mode in kink_mode_options:
-        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
+        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
     elif mode in saus_mode_options:
         # recall that arccoth(x) = arctanh(1/x)
-        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
+        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
     else:
         print(error_string_kink_saus)
     return shiftfunction
     
 def min_pert_shift_func(W, K, mode, vA, DM):
     return min_pert_shift(W, K, vA, mode) - DM
+    
+def min_pert_shift_2(W, K, vA, mode):
+    if mode in kink_mode_options:
+        shiftfunction = (1 / m0(W,vA)) * np.arctanh(disp_rel_sym(W,K,vA,'kink',2) / disp_rel_sym(W,K,vA,'saus',2))
+    elif mode in saus_mode_options:
+        # recall that arccoth(x) = arctanh(1/x)
+        shiftfunction = (1 / m0(W,vA)) * np.arctanh(disp_rel_sym(W,K,vA,'saus',2) / disp_rel_sym(W,K,vA,'kink',2))
+    else:
+        print(error_string_kink_saus)
+    return shiftfunction
+    
+def min_pert_shift_func_2(W, K, mode, vA, DM):
+    return min_pert_shift_2(W, K, vA, mode) - DM
     
 ###############################################################################
 
@@ -151,10 +163,12 @@ if show_RA == True:
                                                     vA_guess[nb], step[nb], RAmin[nb], RAmax[nb], (None))
             plt.plot(RA_values, root_array, linestyle=styles[nb], color='black')
             
+            plt.plot(RA_values, disp_rel_asym(W, K, np.real(root_array)), color='red')
+            
     ax = plt.gca()
     ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
-    ax.set_ylabel(r'$v_A$', fontsize = 20)
-    ax.set_xlabel(r'$R_A$', fontsize = 20)
+    ax.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
+    ax.set_xlabel(r'$R_\mathrm{A}$', fontsize = 20)
     plt.ylim([0.,2.])
     plt.plot([0.,0.], [0., 2.], color='black', linestyle='-')
     ax.annotate('Body modes', xy=(1.2, 0.65), xycoords='data', annotation_clip=False, fontsize=12)
@@ -164,11 +178,11 @@ if show_RA == True:
 
 if show_DM == True:
     # Set up the data
-    DMmin = [-0.999, -0.975]
+    DMmin = [-0.975, -0.999]
     DMmax = [1., 1.]
     
     DM_guess = [-0.5, -0.5]
-    vA_guess = [0.9, 1.29]
+    vA_guess = [1.29, 0.9]
     
     step = [0.001, 0.001]
     
@@ -187,21 +201,19 @@ if show_DM == True:
             DM_values, root_array = tool.line_trace(partial(min_pert_shift_func, W, K, mode), DM_guess[nb], 
                                                     vA_guess[nb], step[nb], DMmin[nb], DMmax[nb], (None))
             plt.plot(DM_values, root_array, linestyle=styles[nb], color='black')
+            plt.plot(DM_values, disp_rel_asym(W, K, np.real(root_array)), color='red')
             
     ax = plt.gca()
     ax.fill_between((-1.2, -1.), (0.,0.), (2.,2.), color='lightgray')
     ax.fill_between((1., 1.2), (0.,0.), (2.,2.), color='lightgray')
     ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
-    ax.set_ylabel(r'$v_A$', fontsize = 20)
-    ax.set_xlabel(r'$\Delta_{min}$', fontsize = 20)
+    ax.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
+    ax.set_xlabel(r'$\Delta_\mathrm{min}$', fontsize = 20)
     plt.ylim([0.,2.])
     plt.xlim([-1.2,1.2])
     plt.plot([-1.,-1.], [0., 2.], color='black', linestyle='-')
     plt.plot([1.,1.], [0., 2.], color='black', linestyle='-')
     ax.annotate('Body modes', xy=(0.5, 0.65), xycoords='data', annotation_clip=False, fontsize=12)
-#    ax.annotate('Kink', xy=(0.3, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
-#    ax.annotate('Sausage', xy=(-0.8, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
-
 
 
 if show_scatter_RA == True:
@@ -235,8 +247,8 @@ if show_scatter_RA == True:
 
 
 if show_scatter_DM == True:
-    NDM = 500
-    NvA = 500
+    NDM = 200
+    NvA = 200
     
     DMmin = -1.2
     DMmax = 1.2
@@ -246,8 +258,11 @@ if show_scatter_DM == True:
     DM_scatter_vals = np.linspace(DMmin, DMmax, NDM)
     vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
     
+    modes = [0,1]
+    
     plt.figure()
-    for mode in ['slow-kink-surf','slow-saus-surf']:
+    for mode_ind in modes:
+        mode = mode_options[mode_ind]
         vA = np.zeros(NDM * NvA)
         DM = np.zeros(NDM * NvA)
         vA[:] = np.NAN
@@ -259,7 +274,45 @@ if show_scatter_DM == True:
                     vA[a] = vA_scatter_vals[i]
                     DM[a] = DM_scatter_vals[j]
                     a=a+1
-        plt.scatter(DM, vA, marker='.')
+        if mode_ind == 0:
+            plt.scatter(DM, vA, marker='.', color='black')
+        if mode_ind == 1:
+            plt.scatter(DM, vA, marker='.', color='red')
 #    plt.ylim([0.2, 1.6])
 #    plt.xlim([-2., 2.])
-        
+
+
+if show_scatter_DM_2 == True:
+    NDM = 200
+    NvA = 200
+    
+    DMmin = -1.2
+    DMmax = 1.2
+    vAmin = 2.5
+    vAmax = 0.
+    
+    DM_scatter_vals = np.linspace(DMmin, DMmax, NDM)
+    vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
+    
+    modes = [0,1]    
+    
+    plt.figure()
+    for mode_ind in modes:
+        mode = mode_options[mode_ind]
+        vA = np.zeros(NDM * NvA)
+        DM = np.zeros(NDM * NvA)
+        vA[:] = np.NAN
+        DM[:] = np.NAN     
+        a=0
+        for i in range(0,NDM):
+            for j in range(0,NvA):
+                if abs(min_pert_shift_func_2(W, K, mode, vA_scatter_vals[i], DM_scatter_vals[j])) < 0.01:
+                    vA[a] = vA_scatter_vals[i]
+                    DM[a] = DM_scatter_vals[j]
+                    a=a+1
+        if mode_ind == 0:
+            plt.scatter(DM, vA, marker='.', color='black')
+        if mode_ind == 1:
+            plt.scatter(DM, vA, marker='.', color='red')
+#    plt.ylim([0.2, 1.6])
+#    plt.xlim([-2., 2.])
