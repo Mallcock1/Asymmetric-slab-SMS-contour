@@ -44,9 +44,10 @@ show_scatter_RA = False
 show_scatter_DM = False
 show_scatter_DM_2 = False
 
-show_RA = True
-show_DM = True
-#show_scatter_RA = True
+#show_RA = True
+#show_DM = True
+show_scatter_RA = True
+show_scatter_RA_2 = True
 #show_scatter_DM = True
 #show_scatter_DM_2 = True
 
@@ -102,12 +103,19 @@ def amp_ratio(W, K, vA, mode):
     return ampfunction
     
 def amp_ratio_func(W, K, mode, vA, RA):
+    return amp_ratio(W, K, vA, mode) - RA
+
+def amp_ratio_2(W, K, vA, mode):
     if mode in kink_mode_options:
-        return m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2)) - RA
+        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2))
     elif mode in saus_mode_options:
-        return - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2)) - RA
+        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2))
     else:
         print(error_string_kink_saus)
+    return ampfunction
+    
+def amp_ratio_func_2(W, K, mode, vA, RA):
+    return amp_ratio_2(W, K, vA, mode) - RA
     
 def min_pert_shift(W, K, vA, mode):
     if mode in kink_mode_options:
@@ -242,8 +250,37 @@ if show_scatter_RA == True:
                     RA[a] = RA_scatter_vals[j]
                     a=a+1
         plt.scatter(RA, vA, marker='.')
-#    plt.ylim([0.2, 1.6])
-#    plt.xlim([-2., 2.])
+    plt.ylim([vAmin, vAmax])
+    plt.xlim([RAmin, RAmax])
+        
+if show_scatter_RA_2 == True:
+    NRA = 200
+    NvA = 200
+    
+    RAmin = -2.
+    RAmax = 2.
+    vAmin = 1.5
+    vAmax = 0.
+    
+    RA_scatter_vals = np.linspace(RAmin, RAmax, NRA)
+    vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
+    
+    plt.figure()
+    for mode in ['slow-kink-surf']:
+        vA = np.zeros(NRA * NvA)
+        RA = np.zeros(NRA * NvA)
+        vA[:] = np.NAN
+        RA[:] = np.NAN        
+        a=0
+        for i in range(0,NRA):
+            for j in range(0,NvA):
+                if abs(amp_ratio_func_2(W, K, mode, vA_scatter_vals[i], RA_scatter_vals[j])) < 0.01:
+                    vA[a] = vA_scatter_vals[i]
+                    RA[a] = RA_scatter_vals[j]
+                    a=a+1
+        plt.scatter(RA, vA, marker='.')
+    plt.ylim([vAmin, vAmax])
+    plt.xlim([RAmin, RAmax])
 
 
 if show_scatter_DM == True:
