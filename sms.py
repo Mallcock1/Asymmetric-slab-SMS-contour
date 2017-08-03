@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import shiftedcolormap as scm
 
 # SBS
 # Define the sound speeds and alfven speeds.
@@ -35,11 +36,14 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[1]
+mode = mode_options[0]
 
 #plot_variable = 'amp-ratio'
+plot_variable = 'amp-ratio-2'
 #plot_variable = 'min-pert-shift'
+#plot_variable = 'min-pert-shift-2'
 #plot_variable = 'W'
+#plot_variable = 'test'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
 
@@ -57,10 +61,38 @@ def m2(W):
     m2function = sc.sqrt(1-W**2*c2**(-2))
     return m2function
 
+def lamb0(W):
+    return -(vA**2-W**2)*1.j/(m0(W)*W)
+
+def lamb1(W, R1):
+    return R1*W*1.j/m1(W, R1)
+    
+def lamb2(W):
+    return R2*W*1.j/m2(W)
+
 error_string_kink_saus = "mode must be 'kink' or 'saus', duh!"
 error_string_subscript = "subscript argument must be 1 or 2"
 
 def disp_rel_sym(W, K, R1, mode, subscript):
+    if subscript == 1:
+        if mode in kink_mode_options:
+            dispfunction = lamb0(W) * sc.tanh(m0(W) * K) + lamb1(W,R1)
+        elif mode in saus_mode_options:
+            dispfunction = lamb0(W) + lamb1(W,R1) * sc.tanh(m0(W) * K)
+        else:
+            print(error_string_kink_saus)
+    elif subscript == 2:
+        if mode in kink_mode_options:
+            dispfunction = lamb0(W) * sc.tanh(m0(W) * K) + lamb2(W)
+        elif mode in saus_mode_options:
+            dispfunction = lamb0(W) + lamb2(W) * sc.tanh(m0(W) * K)
+        else:
+            print(error_string_kink_saus)
+    else:
+        print(error_string_subscript)
+    return dispfunction
+
+def disp_rel_sym_2(W, K, R1, mode, subscript):
     if subscript == 1:
         if mode in kink_mode_options:
             dispfunction = (vA**2 - W**2)*m1(W, R1)*sc.tanh(m0(W)*K) - R1*W**2*m0(W)
@@ -70,9 +102,9 @@ def disp_rel_sym(W, K, R1, mode, subscript):
             print(error_string_kink_saus)
     elif subscript == 2:
         if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W)*K) - R1*W**2*m0(W)
+            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W)*K) - R2*W**2*m0(W)
         elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W) - R1*W**2*m0(W)*sc.tanh(m0(W)*K)
+            dispfunction = (vA**2 - W**2)*m2(W) - R2*W**2*m0(W)*sc.tanh(m0(W)*K)
         else:
             print(error_string_kink_saus)
     else:
@@ -84,12 +116,30 @@ def disp_rel_asym(W, K, R1):
             0.5 * m0(W) * W**2 * (vA**2 - W**2) * (R2 * m1(W,R1) + R1 * m2(W)) *
             (sc.tanh(m0(W) * K) + (sc.tanh(m0(W) * K))**(-1))) /
             (vA**2 - W**2) * (c0**2 - W**2) * (cT**2 - W**2))
+            
+def disp_rel_test(W, K, R1):
+    return disp_rel_sym(W, K, R1, 'saus',2) * disp_rel_sym(W, K, R1, 'kink',1) + disp_rel_sym(W, K, R1, 'saus',1) * disp_rel_sym(W, K, R1, 'kink',2)
+    
+def disp_rel_test_2(W, K, R1):
+    return (lamb0(W) + lamb2(W) * sc.tanh(m0(W) * K)) * (lamb0(W) * sc.tanh(m0(W) * K) + lamb1(W, R1)) + (lamb0(W) + lamb1(W, R1) * sc.tanh(m0(W) * K)) * (lamb0(W) * sc.tanh(m0(W) * K) + lamb2(W))
+
+def disp_rel_test_3(W, K, R1):
+    return disp_rel_sym(W, K, R1, 'kink',1) / disp_rel_sym(W, K, R1, 'kink',2) + disp_rel_sym(W, K, R1, 'saus',1) / disp_rel_sym(W, K, R1, 'saus',2)
     
 def amp_ratio(W, K, R1, mode):
     if mode in kink_mode_options:
-        ampfunction = m2(W)*disp_rel_sym(W,K,R1,'saus',1) / (m1(W,R1)*disp_rel_sym(W,K,R1,'saus',2))
+        ampfunction = disp_rel_sym(W,K,R1,'saus',1) / disp_rel_sym(W,K,R1,'saus',2)
     elif mode in saus_mode_options:
-        ampfunction = - m2(W)*disp_rel_sym(W,K,R1,'kink',1) / (m1(W,R1)*disp_rel_sym(W,K,R1,'kink',2))
+        ampfunction = - disp_rel_sym(W,K,R1,'kink',1) / disp_rel_sym(W,K,R1,'kink',2)
+    else:
+        print(error_string_kink_saus)
+    return ampfunction
+    
+def amp_ratio_2(W, K, R1, mode):
+    if mode in kink_mode_options:
+        ampfunction = - disp_rel_sym(W,K,R1,'kink',1) / disp_rel_sym(W,K,R1,'kink',2)
+    elif mode in saus_mode_options:
+        ampfunction = disp_rel_sym(W,K,R1,'saus',1) / disp_rel_sym(W,K,R1,'saus',2)
     else:
         print(error_string_kink_saus)
     return ampfunction
@@ -100,6 +150,16 @@ def min_pert_shift(W, K, R1, mode):
     elif mode in saus_mode_options:
         # recall that arccoth(x) = arctanh(1/x)
         shiftfunction = (1 / m0(W)) * sc.arctanh(- disp_rel_sym(W,K,R1,'kink',1) / disp_rel_sym(W,K,R1,'saus',1))
+    else:
+        print(error_string_kink_saus)
+    return shiftfunction
+    
+def min_pert_shift_2(W, K, R1, mode):
+    if mode in kink_mode_options:
+        shiftfunction = (1 / m0(W)) * sc.arctanh(disp_rel_sym(W,K,R1,'saus',2) / disp_rel_sym(W,K,R1,'kink',2))
+    elif mode in saus_mode_options:
+        # recall that arccoth(x) = arctanh(1/x)
+        shiftfunction = (1 / m0(W)) * sc.arctanh(disp_rel_sym(W,K,R1,'kink',2) / disp_rel_sym(W,K,R1,'saus',2))
     else:
         print(error_string_kink_saus)
     return shiftfunction
@@ -196,10 +256,16 @@ for i in range(0,NR1):
         print('Found solution number (' + str(i) + ',' + str(j) + ')')
         if plot_variable == 'amp-ratio':
             data_set[i,j] = amp_ratio(W, Kvals[j], R1vals[i], mode)
+        elif plot_variable == 'amp-ratio-2':
+            data_set[i,j] = amp_ratio_2(W, Kvals[j], R1vals[i], mode)
         elif plot_variable == 'min-pert-shift':
             data_set[i,j] = min_pert_shift(W, Kvals[j], R1vals[i], mode)
+        elif plot_variable == 'min-pert-shift-2':
+            data_set[i,j] = min_pert_shift_2(W, Kvals[j], R1vals[i], mode)
         elif plot_variable == 'W':
             data_set[i,j] = W
+        elif plot_variable == 'test':
+            data_set[i,j] = disp_rel_test_3(W,K,R1)
         else:
             print("'plot_variable' can only be 'amp-ratio' or 'min-pert-shift'")
 
@@ -219,7 +285,7 @@ def clim(data,plot_variable):
     min_level = np.floor(np.nanmin(data))
     max_level = np.ceil(np.nanmax(data))
     largest = max(abs(max_level),abs(min_level))
-    if plot_variable == 'amp-ratio':
+    if 'amp-ratio' in plot_variable:
         if 'kink' in mode:
             return [2 - max_level, max_level]
         if 'saus' in mode:
@@ -229,14 +295,32 @@ def clim(data,plot_variable):
     elif plot_variable == 'W':
         return [np.nanmin(data), np.nanmax(data)]
 
-if plot_variable == 'amp-ratio' or plot_variable == 'W':
-    cmap = 'RdBu'
+if plot_variable == 'amp-ratio':
+    if mode in kink_mode_options:    
+        cmap = 'RdBu_r'
+    elif mode in saus_mode_options:    
+        cmap = 'RdBu'
+elif plot_variable == 'W':
+    cmap = 'RdBu_r'
 else:
-    cmap = 'RdBu'
+    cmap = 'RdBu_r'
+    
+    
+    
+    
+orig_cmap = matplotlib.cm.RdBu_r
+shifted_cmap = scm.shiftedColorMap(orig_cmap, midpoint=0.75, name='shifted')
+shrunk_cmap = scm.shiftedColorMap(orig_cmap, start=0.15, midpoint=0.75, stop=0.85, name='shrunk')
+
+
+
 
 fig = plt.figure()
 aspect = 'auto'#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
-im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', clim=clim(data_set,plot_variable), 
+#im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', 
+#                clim=clim(data_set,plot_variable), aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
+
+im = plt.imshow(data_set.transpose(), cmap=shifted_cmap, origin='lower', norm=matplotlib.colors.SymLogNorm(linthresh=0.03, linscale=0.03, vmin=0, vmax=20), 
                 aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 ax = plt.gca()
 
@@ -279,11 +363,13 @@ cb = plt.colorbar(im, cax=cax,
 ticklabs = cb.ax.get_yticklabels()
 cb.ax.set_yticklabels(ticklabs,ha='right')
 cb.ax.yaxis.set_tick_params(pad=pad(data_set))  # your number may vary
+if mode in saus_mode_options and plot_variable == 'amp_ratio':
+    cb.ax.invert_yaxis()
 
 plt.gcf().subplots_adjust(bottom=0.15)
 #plt.tight_layout()
 plt.show()
 
-filename = mode + '_' + plot_variable
-plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
-            + filename)
+#filename = mode + '_' + plot_variable
+#plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+#            + filename)

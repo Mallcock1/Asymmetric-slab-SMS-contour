@@ -9,6 +9,7 @@ import numpy as np
 import scipy as sc
 from functools import partial
 import matplotlib.pyplot as plt
+import matplotlib
 import toolbox as tool
 
 # SBS
@@ -41,13 +42,14 @@ mode = mode_options[0]
 show_RA = False
 show_DM = False
 show_scatter_RA = False
+show_scatter_RA_2 = False
 show_scatter_DM = False
 show_scatter_DM_2 = False
 
-#show_RA = True
+show_RA = True
 #show_DM = True
-show_scatter_RA = True
-show_scatter_RA_2 = True
+#show_scatter_RA = True
+#show_scatter_RA_2 = True
 #show_scatter_DM = True
 #show_scatter_DM_2 = True
 
@@ -92,6 +94,9 @@ def disp_rel_asym(W, K, vA):
             0.5 * m0(W,vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W) + R1 * m2(W)) *
             (sc.tanh(m0(W,vA) * K) + (sc.tanh(m0(W,vA) * K))**(-1))) /
             (vA**2 - W**2) * (c0**2 - W**2) * (cT(vA)**2 - W**2))
+
+def disp_rel_test(W, K, vA):
+    return disp_rel_sym(W, K, vA, 'saus',2) / disp_rel_sym(W, K, vA, 'saus',1) + disp_rel_sym(W, K, vA, 'kink',2) * disp_rel_sym(W, K, vA, 'kink',1)
     
 def amp_ratio(W, K, vA, mode):
     if mode in kink_mode_options:
@@ -145,6 +150,9 @@ def min_pert_shift_func_2(W, K, mode, vA, DM):
     
 ###############################################################################
 
+font = {'size' : 15}
+matplotlib.rc('font', **font)
+
 if show_RA == True:
     # Set up the data
     RAmin = [0.9703, 1.005, 0., -2., -0.961, -0.97348]
@@ -180,9 +188,13 @@ if show_RA == True:
     plt.ylim([0.,2.])
     plt.plot([0.,0.], [0., 2.], color='black', linestyle='-')
     ax.annotate('Body modes', xy=(1.2, 0.65), xycoords='data', annotation_clip=False, fontsize=12)
-    ax.annotate('Kink', xy=(0.3, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
-    ax.annotate('Sausage', xy=(-0.8, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
-
+    ax.annotate('Quasi-kink', xy=(0.15, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
+    ax.annotate('Quasi-sausage', xy=(-1., 1.8), xycoords='data', annotation_clip=False, fontsize=15)
+    plt.gcf().subplots_adjust(bottom=0.15)
+    
+    filename = mode + '_RA_vA_approx'
+    plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+                + filename)
 
 if show_DM == True:
     # Set up the data
@@ -209,19 +221,24 @@ if show_DM == True:
             DM_values, root_array = tool.line_trace(partial(min_pert_shift_func, W, K, mode), DM_guess[nb], 
                                                     vA_guess[nb], step[nb], DMmin[nb], DMmax[nb], (None))
             plt.plot(DM_values, root_array, linestyle=styles[nb], color='black')
-            plt.plot(DM_values, disp_rel_asym(W, K, np.real(root_array)), color='red')
+#            plt.plot(DM_values, disp_rel_asym(W, K, np.real(root_array)), color='red')
             
     ax = plt.gca()
     ax.fill_between((-1.2, -1.), (0.,0.), (2.,2.), color='lightgray')
     ax.fill_between((1., 1.2), (0.,0.), (2.,2.), color='lightgray')
     ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
     ax.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
-    ax.set_xlabel(r'$\Delta_\mathrm{min}$', fontsize = 20)
+    ax.set_xlabel(r'$\Delta_\mathrm{min} / x_0$', fontsize = 20)
     plt.ylim([0.,2.])
     plt.xlim([-1.2,1.2])
     plt.plot([-1.,-1.], [0., 2.], color='black', linestyle='-')
     plt.plot([1.,1.], [0., 2.], color='black', linestyle='-')
     ax.annotate('Body modes', xy=(0.5, 0.65), xycoords='data', annotation_clip=False, fontsize=12)
+    plt.gcf().subplots_adjust(bottom=0.15)
+    
+    filename = mode + '_DM_vA_approx'
+    plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+                + filename)
 
 
 if show_scatter_RA == True:
