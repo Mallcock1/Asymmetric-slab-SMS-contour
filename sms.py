@@ -91,25 +91,6 @@ def disp_rel_sym(W, K, R1, mode, subscript):
     else:
         print(error_string_subscript)
     return dispfunction
-
-def disp_rel_sym_2(W, K, R1, mode, subscript):
-    if subscript == 1:
-        if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m1(W, R1)*sc.tanh(m0(W)*K) - R1*W**2*m0(W)
-        elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m1(W, R1) - R1*W**2*m0(W)*sc.tanh(m0(W)*K)
-        else:
-            print(error_string_kink_saus)
-    elif subscript == 2:
-        if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W)*K) - R2*W**2*m0(W)
-        elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W) - R2*W**2*m0(W)*sc.tanh(m0(W)*K)
-        else:
-            print(error_string_kink_saus)
-    else:
-        print(error_string_subscript)
-    return dispfunction
     
 def disp_rel_asym(W, K, R1):
     return ((W**4 * m0(W)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W,R1) * m2(W) -
@@ -117,15 +98,6 @@ def disp_rel_asym(W, K, R1):
             (sc.tanh(m0(W) * K) + (sc.tanh(m0(W) * K))**(-1))) /
             (vA**2 - W**2) * (c0**2 - W**2) * (cT**2 - W**2))
             
-def disp_rel_test(W, K, R1):
-    return disp_rel_sym(W, K, R1, 'saus',2) * disp_rel_sym(W, K, R1, 'kink',1) + disp_rel_sym(W, K, R1, 'saus',1) * disp_rel_sym(W, K, R1, 'kink',2)
-    
-def disp_rel_test_2(W, K, R1):
-    return (lamb0(W) + lamb2(W) * sc.tanh(m0(W) * K)) * (lamb0(W) * sc.tanh(m0(W) * K) + lamb1(W, R1)) + (lamb0(W) + lamb1(W, R1) * sc.tanh(m0(W) * K)) * (lamb0(W) * sc.tanh(m0(W) * K) + lamb2(W))
-
-def disp_rel_test_3(W, K, R1):
-    return disp_rel_sym(W, K, R1, 'kink',1) / disp_rel_sym(W, K, R1, 'kink',2) + disp_rel_sym(W, K, R1, 'saus',1) / disp_rel_sym(W, K, R1, 'saus',2)
-    
 def amp_ratio(W, K, R1, mode):
     if mode in kink_mode_options:
         ampfunction = disp_rel_sym(W,K,R1,'saus',1) / disp_rel_sym(W,K,R1,'saus',2)
