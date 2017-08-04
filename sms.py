@@ -394,7 +394,9 @@ if 'amp-ratio' in plot_variable:
         cb.set_ticklabels([r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$',r'$10^{1}$',r'$10^{2}$'])
     elif 'saus' in mode:
         cb.set_ticks([-0.000001,-0.00001,-0.0001,-0.001,-0.01,-0.1,-1.,-10.,-100])
-        cb.set_ticklabels([r'$-10^{-6}$',r'$-10^{-5}$',r'$-10^{-4}$',r'$-10^{-3}$',r'$-10^{-2}$',r'$-10^{-1}$',r'$-10^{0}$',r'$-10^{1}$',r'$-10^{2}$'])
+        cb.set_ticklabels([r'$-10^{-6}$',r'$-10^{-5}$',r'$-10^{-4}$',r'$-10^{-3}$',
+                           r'$-10^{-2}$',r'$-10^{-1}$',r'$-10^{0}$',r'$-10^{1}$',
+                           r'$-10^{2}$'])
 #cb.set_ticklabels([mi, 1.,ma])
 #ticklabs = cb.ax.get_yticklabels()
 #cb.ax.set_yticklabels(ticklabs,ha='right')
