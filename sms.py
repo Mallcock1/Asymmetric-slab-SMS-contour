@@ -36,10 +36,10 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[0]
+mode = mode_options[1]
 
-#plot_variable = 'amp-ratio'
-plot_variable = 'amp-ratio-2'
+plot_variable = 'amp-ratio'
+#plot_variable = 'amp-ratio-2'
 #plot_variable = 'min-pert-shift'
 #plot_variable = 'min-pert-shift-2'
 #plot_variable = 'W'
@@ -196,12 +196,12 @@ R1max1 = 4.
 if mode == 'slow-kink-surf':
     Kmin = 0.01
     R1min = 0.5 #0.001
-    Kmax = 3.
+    Kmax = 3.#3.
     R1max = 3.5 #4.
 if mode == 'slow-saus-surf':
     Kmin = 0.01
     R1min = 0.5
-    Kmax = 3.
+    Kmax = 3.#3.
     R1max = 3.5
 if mode == 'fast-kink-surf':
     Kmin = 0.5
@@ -282,37 +282,62 @@ font = {'family' : 'normal',
 matplotlib.rc('font', **font)
 
 def clim(data,plot_variable):
-    min_level = np.floor(np.nanmin(data))
-    max_level = np.ceil(np.nanmax(data))
+    min_level = round(np.nanmin(data),1)
+    max_level = round(np.nanmax(data),1)
+    if np.nanmin(data) < min_level:
+        min_level= min_level - 0.1
+    if np.nanmax(data) < max_level:
+        max_level= max_level + 0.1
     largest = max(abs(max_level),abs(min_level))
     if 'amp-ratio' in plot_variable:
         if 'kink' in mode:
             return [2 - max_level, max_level]
         if 'saus' in mode:
             return [min_level, -2 - min_level]
-    elif plot_variable == 'min-pert-shift':
+    elif 'min-pert-shift' in plot_variable:
         return [-largest, largest]
     elif plot_variable == 'W':
         return [np.nanmin(data), np.nanmax(data)]
+        
+#    min_level = np.floor(np.nanmin(data))
+#    max_level = np.ceil(np.nanmax(data))
+#    largest = max(abs(max_level),abs(min_level))
+#    if 'amp-ratio' in plot_variable:
+#        if 'kink' in mode:
+#            return [2 - max_level, max_level]
+#        if 'saus' in mode:
+#            return [min_level, -2 - min_level]
+#    elif 'min-pert-shift' in plot_variable:
+#        return [-largest, largest]
+#    elif plot_variable == 'W':
+#        return [np.nanmin(data), np.nanmax(data)]
+    
+if 'amp-ratio' in plot_variable:
+    mi = np.nanmin(data_set)
+    if 'kink' in mode:
+        ma = np.nanmax(data_set)
+    if 'saus' in mode:
+        if mode == 'slow-saus-surf':
+            ma = -0.000001
+        else:
+            ma = np.nanmax(data_set)
 
-if plot_variable == 'amp-ratio':
-    if mode in kink_mode_options:    
-        cmap = 'RdBu_r'
-    elif mode in saus_mode_options:    
-        cmap = 'RdBu'
-elif plot_variable == 'W':
-    cmap = 'RdBu_r'
-else:
-    cmap = 'RdBu_r'
+    if 'saus' in mode:
+        midpoint = - np.log10(-mi) / np.log10(ma/mi)
+    elif 'kink' in mode:
+        midpoint = - np.log10(mi) / np.log10(ma/mi)
+        
+    if 'saus' in mode and 'amp-ratio' in plot_variable:
+        orig_cmap = matplotlib.cm.RdBu
+    else:
+        orig_cmap = matplotlib.cm.RdBu_r
+    shifted_cmap = scm.shiftedColorMap(orig_cmap, midpoint=midpoint, name='shifted')
     
-    
-    
-    
-orig_cmap = matplotlib.cm.RdBu_r
-shifted_cmap = scm.shiftedColorMap(orig_cmap, midpoint=0.75, name='shifted')
-shrunk_cmap = scm.shiftedColorMap(orig_cmap, start=0.15, midpoint=0.75, stop=0.85, name='shrunk')
-
-
+    def norm(mode, plot_variable):
+        if 'saus' in mode:
+            return matplotlib.colors.SymLogNorm(linthresh=0.000000000001, linscale=0.000000000001, vmax=ma)
+        if 'kink' in mode:
+            return matplotlib.colors.LogNorm()
 
 
 fig = plt.figure()
@@ -320,8 +345,12 @@ aspect = 'auto'#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
 #im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', 
 #                clim=clim(data_set,plot_variable), aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 
-im = plt.imshow(data_set.transpose(), cmap=shifted_cmap, origin='lower', norm=matplotlib.colors.SymLogNorm(linthresh=0.03, linscale=0.03, vmin=0, vmax=20), 
-                aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
+if 'amp-ratio' in plot_variable:
+    im = plt.imshow(data_set.transpose(), cmap=shifted_cmap, origin='lower', norm=norm(mode, plot_variable), 
+                    aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
+else:
+    im = plt.imshow(data_set.transpose(), cmap='RdBu_r', origin='lower', clim=clim(data_set,plot_variable),
+                    aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 ax = plt.gca()
 
 
@@ -357,14 +386,24 @@ def fmt(x, pos):
     a = '{:.1f}'.format(x)
     return a
 #cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
-cb = plt.colorbar(im, cax=cax, 
-                  format=matplotlib.ticker.FuncFormatter(fmt))
-        
-ticklabs = cb.ax.get_yticklabels()
-cb.ax.set_yticklabels(ticklabs,ha='right')
-cb.ax.yaxis.set_tick_params(pad=pad(data_set))  # your number may vary
-if mode in saus_mode_options and plot_variable == 'amp_ratio':
+cb = plt.colorbar(im, cax=cax, format=matplotlib.ticker.FuncFormatter(fmt))
+
+if 'amp-ratio' in plot_variable:
+    if 'kink' in mode:
+        cb.set_ticks([0.01,0.1,1.,10.,100])
+        cb.set_ticklabels([r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$',r'$10^{1}$',r'$10^{2}$'])
+    elif 'saus' in mode:
+        cb.set_ticks([-0.000001,-0.00001,-0.0001,-0.001,-0.01,-0.1,-1.,-10.,-100])
+        cb.set_ticklabels([r'$-10^{-6}$',r'$-10^{-5}$',r'$-10^{-4}$',r'$-10^{-3}$',r'$-10^{-2}$',r'$-10^{-1}$',r'$-10^{0}$',r'$-10^{1}$',r'$-10^{2}$'])
+#cb.set_ticklabels([mi, 1.,ma])
+#ticklabs = cb.ax.get_yticklabels()
+#cb.ax.set_yticklabels(ticklabs,ha='right')
+#cb.ax.yaxis.set_tick_params(pad=pad(data_set))
+#    
+if 'saus' in mode and 'amp-ratio' in plot_variable:
     cb.ax.invert_yaxis()
+    print('axis inverted')
+
 
 plt.gcf().subplots_adjust(bottom=0.15)
 #plt.tight_layout()
