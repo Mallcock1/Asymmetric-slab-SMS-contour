@@ -45,18 +45,15 @@ show_scatter_RA = False
 show_scatter_RA_2 = False
 show_scatter_DM = False
 show_scatter_DM_2 = False
-
-show_RA = True
-#show_DM = True
+#
+#show_RA = True
+show_DM = True
 #show_scatter_RA = True
 #show_scatter_RA_2 = True
 #show_scatter_DM = True
 #show_scatter_DM_2 = True
 
 ###############################################################################
-
-error_string_kink_saus = "mode must be 'kink' or 'saus', duh!"
-error_string_subscript = "subscript argument must be 1 or 2"
 
 def m0(W, vA):
     m0function = sc.sqrt((c0**2-W**2)*(vA**2-W**2)*((c0**2+vA**2)*(cT(vA)**2-W**2))**(-1))
@@ -70,19 +67,31 @@ def m2(W):
     m2function = sc.sqrt(1-W**2*c2**(-2))
     return m2function
 
+def lamb0(W, vA):
+    return -(vA**2-W**2)*1.j/(m0(W, vA)*W)
+
+def lamb1(W):
+    return R1*W*1.j/m1(W)
+    
+def lamb2(W):
+    return R2*W*1.j/m2(W)
+
+error_string_kink_saus = "mode must be 'kink' or 'saus', duh!"
+error_string_subscript = "subscript argument must be 1 or 2"
+
 def disp_rel_sym(W, K, vA, mode, subscript):
     if subscript == 1:
         if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m1(W)*sc.tanh(m0(W,vA)*K) - R1*W**2*m0(W,vA)
+            dispfunction = lamb0(W, vA) * sc.tanh(m0(W, vA) * K) + lamb1(W)
         elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m1(W) - R1*W**2*m0(W,vA)*sc.tanh(m0(W,vA)*K)
+            dispfunction = lamb0(W, vA) + lamb1(W) * sc.tanh(m0(W, vA) * K)
         else:
             print(error_string_kink_saus)
     elif subscript == 2:
         if mode in kink_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W,vA)*K) - R1*W**2*m0(W,vA)
+            dispfunction = lamb0(W, vA) * sc.tanh(m0(W, vA) * K) + lamb2(W)
         elif mode in saus_mode_options:
-            dispfunction = (vA**2 - W**2)*m2(W) - R1*W**2*m0(W,vA)*sc.tanh(m0(W,vA)*K)
+            dispfunction = lamb0(W, vA) + lamb2(W) * sc.tanh(m0(W, vA) * K)
         else:
             print(error_string_kink_saus)
     else:
@@ -90,63 +99,182 @@ def disp_rel_sym(W, K, vA, mode, subscript):
     return dispfunction
     
 def disp_rel_asym(W, K, vA):
-    return ((W**4 * m0(W,vA)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W) * m2(W) -
-            0.5 * m0(W,vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W) + R1 * m2(W)) *
-            (sc.tanh(m0(W,vA) * K) + (sc.tanh(m0(W,vA) * K))**(-1))) /
+    return ((W**4 * m0(W, vA)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W) * m2(W) -
+            0.5 * m0(W, vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W) + R1 * m2(W)) *
+            (sc.tanh(m0(W, vA) * K) + (sc.tanh(m0(W, vA) * K))**(-1))) /
             (vA**2 - W**2) * (c0**2 - W**2) * (cT(vA)**2 - W**2))
-
-def disp_rel_test(W, K, vA):
-    return disp_rel_sym(W, K, vA, 'saus',2) / disp_rel_sym(W, K, vA, 'saus',1) + disp_rel_sym(W, K, vA, 'kink',2) * disp_rel_sym(W, K, vA, 'kink',1)
-    
+            
 def amp_ratio(W, K, vA, mode):
     if mode in kink_mode_options:
-        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2))
+        ampfunction = disp_rel_sym(W, K, vA, 'saus', 1) / disp_rel_sym(W, K, vA, 'saus', 2)
     elif mode in saus_mode_options:
-        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2))
+        ampfunction = - disp_rel_sym(W, K, vA, 'kink', 1) / disp_rel_sym(W, K, vA, 'kink', 2)
     else:
         print(error_string_kink_saus)
     return ampfunction
-    
+
 def amp_ratio_func(W, K, mode, vA, RA):
     return amp_ratio(W, K, vA, mode) - RA
-
+    
 def amp_ratio_2(W, K, vA, mode):
     if mode in kink_mode_options:
-        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2))
+        ampfunction = - disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'kink',2)
     elif mode in saus_mode_options:
-        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2))
+        ampfunction = disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'saus',2)
     else:
         print(error_string_kink_saus)
     return ampfunction
     
 def amp_ratio_func_2(W, K, mode, vA, RA):
-    return amp_ratio_2(W, K, vA, mode) - RA
+    return amp_ratio_2(W, K, vA, mode) - RA    
     
 def min_pert_shift(W, K, vA, mode):
     if mode in kink_mode_options:
-        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
+        shiftfunction = (1 / m0(W,vA)) * sc.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
     elif mode in saus_mode_options:
         # recall that arccoth(x) = arctanh(1/x)
-        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
+        shiftfunction = (1 / m0(W,vA)) * sc.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
     else:
         print(error_string_kink_saus)
     return shiftfunction
     
 def min_pert_shift_func(W, K, mode, vA, DM):
-    return min_pert_shift(W, K, vA, mode) - DM
+    return min_pert_shift(W, K, vA, mode) - DM 
     
 def min_pert_shift_2(W, K, vA, mode):
     if mode in kink_mode_options:
-        shiftfunction = (1 / m0(W,vA)) * np.arctanh(disp_rel_sym(W,K,vA,'kink',2) / disp_rel_sym(W,K,vA,'saus',2))
+        shiftfunction = (1 / m0(W,vA)) * sc.arctanh(disp_rel_sym(W,K, vA,'saus',2) / disp_rel_sym(W,K, vA,'kink',2))
     elif mode in saus_mode_options:
         # recall that arccoth(x) = arctanh(1/x)
-        shiftfunction = (1 / m0(W,vA)) * np.arctanh(disp_rel_sym(W,K,vA,'saus',2) / disp_rel_sym(W,K,vA,'kink',2))
+        shiftfunction = (1 / m0(W, vA)) * sc.arctanh(disp_rel_sym(W,K, vA,'kink',2) / disp_rel_sym(W,K, vA,'saus',2))
     else:
         print(error_string_kink_saus)
     return shiftfunction
-    
+
 def min_pert_shift_func_2(W, K, mode, vA, DM):
-    return min_pert_shift_2(W, K, vA, mode) - DM
+    return min_pert_shift_2(W, K, vA, mode) - DM 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#error_string_kink_saus = "mode must be 'kink' or 'saus', duh!"
+#error_string_subscript = "subscript argument must be 1 or 2"
+#
+#def m0(W, vA):
+#    m0function = sc.sqrt((c0**2-W**2)*(vA**2-W**2)*((c0**2+vA**2)*(cT(vA)**2-W**2))**(-1))
+#    return m0function
+#    
+#def m1(W):
+#    m1function = sc.sqrt(1-W**2*c2**(-2)*R1*R2**(-1))
+#    return m1function
+#
+#def m2(W):
+#    m2function = sc.sqrt(1-W**2*c2**(-2))
+#    return m2function
+#
+#def disp_rel_sym(W, K, vA, mode, subscript):
+#    if subscript == 1:
+#        if mode in kink_mode_options:
+#            dispfunction = (vA**2 - W**2)*m1(W)*sc.tanh(m0(W,vA)*K) - R1*W**2*m0(W,vA)
+#        elif mode in saus_mode_options:
+#            dispfunction = (vA**2 - W**2)*m1(W) - R1*W**2*m0(W,vA)*sc.tanh(m0(W,vA)*K)
+#        else:
+#            print(error_string_kink_saus)
+#    elif subscript == 2:
+#        if mode in kink_mode_options:
+#            dispfunction = (vA**2 - W**2)*m2(W)*sc.tanh(m0(W,vA)*K) - R1*W**2*m0(W,vA)
+#        elif mode in saus_mode_options:
+#            dispfunction = (vA**2 - W**2)*m2(W) - R1*W**2*m0(W,vA)*sc.tanh(m0(W,vA)*K)
+#        else:
+#            print(error_string_kink_saus)
+#    else:
+#        print(error_string_subscript)
+#    return dispfunction
+#    
+#def disp_rel_asym(W, K, vA):
+#    return ((W**4 * m0(W,vA)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W) * m2(W) -
+#            0.5 * m0(W,vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W) + R1 * m2(W)) *
+#            (sc.tanh(m0(W,vA) * K) + (sc.tanh(m0(W,vA) * K))**(-1))) /
+#            (vA**2 - W**2) * (c0**2 - W**2) * (cT(vA)**2 - W**2))
+#
+#def disp_rel_test(W, K, vA):
+#    return disp_rel_sym(W, K, vA, 'saus',2) / disp_rel_sym(W, K, vA, 'saus',1) + disp_rel_sym(W, K, vA, 'kink',2) * disp_rel_sym(W, K, vA, 'kink',1)
+#    
+#def amp_ratio(W, K, vA, mode):
+#    if mode in kink_mode_options:
+#        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2))
+#    elif mode in saus_mode_options:
+#        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2))
+#    else:
+#        print(error_string_kink_saus)
+#    return ampfunction
+#    
+#def amp_ratio_func(W, K, mode, vA, RA):
+#    return amp_ratio(W, K, vA, mode) - RA
+#
+#def amp_ratio_2(W, K, vA, mode):
+#    if mode in kink_mode_options:
+#        ampfunction = - m2(W)*disp_rel_sym(W,K,vA,'kink',1) / (m1(W)*disp_rel_sym(W,K,vA,'kink',2))
+#    elif mode in saus_mode_options:
+#        ampfunction = m2(W)*disp_rel_sym(W,K,vA,'saus',1) / (m1(W)*disp_rel_sym(W,K,vA,'saus',2))
+#    else:
+#        print(error_string_kink_saus)
+#    return ampfunction
+#    
+#def amp_ratio_func_2(W, K, mode, vA, RA):
+#    return amp_ratio_2(W, K, vA, mode) - RA
+#    
+#def min_pert_shift(W, K, vA, mode):
+#    if mode in kink_mode_options:
+#        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'kink',1) / disp_rel_sym(W,K,vA,'saus',1))
+#    elif mode in saus_mode_options:
+#        # recall that arccoth(x) = arctanh(1/x)
+#        shiftfunction = (1 / m0(W,vA)) * np.arctanh(- disp_rel_sym(W,K,vA,'saus',1) / disp_rel_sym(W,K,vA,'kink',1))
+#    else:
+#        print(error_string_kink_saus)
+#    return shiftfunction
+#    
+#def min_pert_shift_func(W, K, mode, vA, DM):
+#    return min_pert_shift(W, K, vA, mode) - DM
+#    
+#def min_pert_shift_2(W, K, vA, mode):
+#    if mode in kink_mode_options:
+#        shiftfunction = (1 / m0(W,vA)) * np.arctanh(disp_rel_sym(W,K,vA,'kink',2) / disp_rel_sym(W,K,vA,'saus',2))
+#    elif mode in saus_mode_options:
+#        # recall that arccoth(x) = arctanh(1/x)
+#        shiftfunction = (1 / m0(W,vA)) * np.arctanh(disp_rel_sym(W,K,vA,'saus',2) / disp_rel_sym(W,K,vA,'kink',2))
+#    else:
+#        print(error_string_kink_saus)
+#    return shiftfunction
+#    
+#def min_pert_shift_func_2(W, K, mode, vA, DM):
+#    return min_pert_shift_2(W, K, vA, mode) - DM
     
 ###############################################################################
 
@@ -155,17 +283,17 @@ matplotlib.rc('font', **font)
 
 if show_RA == True:
     # Set up the data
-    RAmin = [0.9703, 1.005, 0., -2., -0.961, -0.97348]
-    RAmax = [0.9812, 2., 0.96, -1.01, 0., -0.9608]
+    RAmin = [1.01, 0.0, 0.77, -2., -0.7944, -0.7205]
+    RAmax = [2.0, 0.69, 0.847, -1.1, -0.7, 0.0]
     
-    RA_guess = [0.971, 1.2, 0.88, -1.1, -0.8, -0.96]
-    vA_guess = [0.55, 1.04, 0.9, 1.26, 1.04, 0.26]
+    RA_guess = [1.5, 0.5, 0.79, -1.5, -0.73, -0.5]
+    vA_guess = [1.23, 0.89, 0.56, 1.46, 0.55, 0.95]
     
-    step = [0.0001, 0.0005, 0.001, 0.001, 0.001, 0.00002]
+    step = [0.0005, 0.0005, 0.001, 0.001, 0.0001, 0.0001]
     
-    modes = [0,1]
+    modes = [0, 1]#[0,1]
     
-    branches = [3,3]
+    branches = [3, 3]#[3,3]
     
     styles = ['--'] * 3 + ['-'] * 3
 
@@ -182,11 +310,11 @@ if show_RA == True:
             plt.plot(RA_values, disp_rel_asym(W, K, np.real(root_array)), color='red')
             
     ax = plt.gca()
-    ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
+    ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray', zorder=2.5)
     ax.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
     ax.set_xlabel(r'$R_\mathrm{A}$', fontsize = 20)
     plt.ylim([0.,2.])
-    plt.plot([0.,0.], [0., 2.], color='black', linestyle='-')
+    plt.plot([0.,0.], [0., 2.], color='black', linestyle='-', zorder=3)
     ax.annotate('Body modes', xy=(1.2, 0.65), xycoords='data', annotation_clip=False, fontsize=12)
     ax.annotate('Quasi-kink', xy=(0.15, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
     ax.annotate('Quasi-sausage', xy=(-1., 1.8), xycoords='data', annotation_clip=False, fontsize=15)
@@ -198,17 +326,17 @@ if show_RA == True:
 
 if show_DM == True:
     # Set up the data
-    DMmin = [-0.975, -0.999]
-    DMmax = [1., 1.]
+    DMmin = [-0.6, -0.6]
+    DMmax = [-0.4, -0.4]
     
     DM_guess = [-0.5, -0.5]
-    vA_guess = [1.29, 0.9]
+    vA_guess = [1.29, 0.89]
     
     step = [0.001, 0.001]
     
-    modes = [0,1]
+    modes = [1,1]
     
-    branches = [1,1]
+    branches = [2,0]
     
     styles = ['--', '-']
     
@@ -226,7 +354,7 @@ if show_DM == True:
     ax = plt.gca()
     ax.fill_between((-1.2, -1.), (0.,0.), (2.,2.), color='lightgray')
     ax.fill_between((1., 1.2), (0.,0.), (2.,2.), color='lightgray')
-    ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
+#    ax.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
     ax.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
     ax.set_xlabel(r'$\Delta_\mathrm{min} / x_0$', fontsize = 20)
     plt.ylim([0.,2.])
@@ -247,8 +375,8 @@ if show_scatter_RA == True:
     
     RAmin = -2.
     RAmax = 2.
-    vAmin = 1.5
-    vAmax = 0.
+    vAmin = 0.
+    vAmax = 2.
     
     RA_scatter_vals = np.linspace(RAmin, RAmax, NRA)
     vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
@@ -262,6 +390,7 @@ if show_scatter_RA == True:
         a=0
         for i in range(0,NRA):
             for j in range(0,NvA):
+                print('vA = ' + str(vA_scatter_vals[i]))
                 if abs(amp_ratio_func(W, K, mode, vA_scatter_vals[i], RA_scatter_vals[j])) < 0.01:
                     vA[a] = vA_scatter_vals[i]
                     RA[a] = RA_scatter_vals[j]
@@ -276,8 +405,8 @@ if show_scatter_RA_2 == True:
     
     RAmin = -2.
     RAmax = 2.
-    vAmin = 1.5
-    vAmax = 0.
+    vAmin = 0.
+    vAmax = 2.
     
     RA_scatter_vals = np.linspace(RAmin, RAmax, NRA)
     vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)
@@ -306,8 +435,8 @@ if show_scatter_DM == True:
     
     DMmin = -1.2
     DMmax = 1.2
-    vAmin = 2.5
-    vAmax = 0.
+    vAmin = 0.
+    vAmax = 2.5
     
     DM_scatter_vals = np.linspace(DMmin, DMmax, NDM)
     vA_scatter_vals = np.linspace(vAmin, vAmax, NvA)

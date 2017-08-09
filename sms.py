@@ -36,10 +36,10 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[1]
+mode = mode_options[0]
 
-plot_variable = 'amp-ratio'
-#plot_variable = 'amp-ratio-2'
+#plot_variable = 'amp-ratio'
+plot_variable = 'amp-ratio-2'
 #plot_variable = 'min-pert-shift'
 #plot_variable = 'min-pert-shift-2'
 #plot_variable = 'W'
