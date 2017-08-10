@@ -236,8 +236,6 @@ for i in range(0,NR1):
             data_set[i,j] = min_pert_shift_2(W, Kvals[j], R1vals[i], mode)
         elif plot_variable == 'W':
             data_set[i,j] = W
-        elif plot_variable == 'test':
-            data_set[i,j] = disp_rel_test_3(W,K,R1)
         else:
             print("'plot_variable' can only be 'amp-ratio' or 'min-pert-shift'")
 
