@@ -37,10 +37,10 @@ for mode in mode_options:
 
 mode = mode_options[0]
 
-#plot_variable = 'amp-ratio'
+plot_variable = 'amp-ratio'
 #plot_variable = 'amp-ratio-2'
 #plot_variable = 'min-pert-shift'
-plot_variable = 'min-pert-shift-2'
+#plot_variable = 'min-pert-shift-2'
 #plot_variable = 'W'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
@@ -156,8 +156,8 @@ def trans(R1):
 # Set up the data
 
 #number of iternations in R1 and K
-NR1 = 50 #100
-NK = 50 #400 for fast kink surf? #100
+NR1 = 70 #100
+NK = 70 #400 for fast kink surf? #100
 
 Kmax1 = 8. #5.
 R1max1 = 4.
@@ -255,11 +255,8 @@ def clim(data, plot_variable):
     if np.nanmax(data) < max_level:
         max_level= max_level + 0.1
     largest = max(abs(max_level),abs(min_level))
-    if 'amp-ratio' in plot_variable:
-        if 'kink' in mode:
-            return [2 - max_level, max_level]
-        if 'saus' in mode:
-            return [min_level, -2 - min_level]
+    if 'amp-ratio' in plot_variable:    
+        return None
     elif 'min-pert-shift' in plot_variable:
         return [-largest, largest]
     elif plot_variable == 'W':
@@ -303,14 +300,17 @@ else:
 fig = plt.figure()
 aspect = 'auto'
 
-if 'amp-ratio' in plot_variable:
-    im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', norm=norm, 
-                    aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
-else:
-    im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', clim=clim(data_set,plot_variable),
-                    aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
-ax = plt.gca()
+#
+im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', norm=norm, 
+                clim=clim(data_set,plot_variable), aspect=aspect, 
+                extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
+contours = plt.contour(data_set.transpose(), colors='black', extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 
+#Make negative contours solid too.
+matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+
+plt.clabel(contours, inline=1, fmt='%1.1f', fontsize=14)
+ax = plt.gca()
 
 plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
 plt.ylabel(r'$kx_0$', fontsize=25)
