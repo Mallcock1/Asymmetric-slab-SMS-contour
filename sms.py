@@ -11,7 +11,6 @@ from scipy.optimize import newton
 from functools import partial
 import matplotlib.pyplot as plt
 import matplotlib
-import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import shiftedcolormap as scm
 
@@ -39,11 +38,10 @@ for mode in mode_options:
 mode = mode_options[0]
 
 #plot_variable = 'amp-ratio'
-plot_variable = 'amp-ratio-2'
+#plot_variable = 'amp-ratio-2'
 #plot_variable = 'min-pert-shift'
-#plot_variable = 'min-pert-shift-2'
+plot_variable = 'min-pert-shift-2'
 #plot_variable = 'W'
-#plot_variable = 'test'
 
 print('Plotting ' + plot_variable + ' for ' + mode + ' mode')
 
@@ -245,13 +243,11 @@ for i in range(NR1):
         if abs(data_set[i,j]) == np.inf:
                 data_set[i,j] = np.nan
         
-font = {'family' : 'normal',
-        'weight' : 'light',
-        'size'   : 18}
-
+font = {'size' : 15}
 matplotlib.rc('font', **font)
 
-def clim(data,plot_variable):
+# set limits of colormap range
+def clim(data, plot_variable):
     min_level = round(np.nanmin(data),1)
     max_level = round(np.nanmax(data),1)
     if np.nanmin(data) < min_level:
@@ -268,20 +264,8 @@ def clim(data,plot_variable):
         return [-largest, largest]
     elif plot_variable == 'W':
         return [np.nanmin(data), np.nanmax(data)]
-        
-#    min_level = np.floor(np.nanmin(data))
-#    max_level = np.ceil(np.nanmax(data))
-#    largest = max(abs(max_level),abs(min_level))
-#    if 'amp-ratio' in plot_variable:
-#        if 'kink' in mode:
-#            return [2 - max_level, max_level]
-#        if 'saus' in mode:
-#            return [min_level, -2 - min_level]
-#    elif 'min-pert-shift' in plot_variable:
-#        return [-largest, largest]
-#    elif plot_variable == 'W':
-#        return [np.nanmin(data), np.nanmax(data)]
-    
+
+# set colormap and other kwargs for imshow
 if 'amp-ratio' in plot_variable:
     mi = np.nanmin(data_set)
     if 'kink' in mode:
@@ -296,30 +280,34 @@ if 'amp-ratio' in plot_variable:
         midpoint = - np.log10(-mi) / np.log10(ma/mi)
     elif 'kink' in mode:
         midpoint = - np.log10(mi) / np.log10(ma/mi)
-        
+
     if 'saus' in mode and 'amp-ratio' in plot_variable:
         orig_cmap = matplotlib.cm.RdBu
     else:
         orig_cmap = matplotlib.cm.RdBu_r
-    shifted_cmap = scm.shiftedColorMap(orig_cmap, midpoint=midpoint, name='shifted')
+    cmap = scm.shiftedColorMap(orig_cmap, midpoint=midpoint, name='shifted')
+elif 'min-pert-shift' in plot_variable:
+    cmap = 'PuOr_r'
     
-    def norm(mode, plot_variable):
-        if 'saus' in mode:
-            return matplotlib.colors.SymLogNorm(linthresh=0.000000000001, linscale=0.000000000001, vmax=ma)
-        if 'kink' in mode:
-            return matplotlib.colors.LogNorm()
+
+if 'amp-ratio' in plot_variable:
+    if 'saus' in mode:
+        norm = matplotlib.colors.SymLogNorm(linthresh=0.000000000001, linscale=0.000000000001, vmax=ma)
+    if 'kink' in mode:
+        norm = matplotlib.colors.LogNorm()
+else:
+    norm = None
+        
 
 
 fig = plt.figure()
-aspect = 'auto'#(R1vals[-1] - R1vals[0])/(Kvals[-1] - Kvals[0])# * 0.5
-#im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', 
-#                clim=clim(data_set,plot_variable), aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
+aspect = 'auto'
 
 if 'amp-ratio' in plot_variable:
-    im = plt.imshow(data_set.transpose(), cmap=shifted_cmap, origin='lower', norm=norm(mode, plot_variable), 
+    im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', norm=norm, 
                     aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 else:
-    im = plt.imshow(data_set.transpose(), cmap='RdBu_r', origin='lower', clim=clim(data_set,plot_variable),
+    im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', clim=clim(data_set,plot_variable),
                     aspect=aspect, extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 ax = plt.gca()
 
@@ -328,9 +316,7 @@ plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
 plt.ylabel(r'$kx_0$', fontsize=25)
 if mode == 'fast-kink-surf':
     plt.ylim([4.,Kmax])
-##ax.xaxis.tick_top()
-##ax.xaxis.set_label_position('top') 
-#
+    
 # get data you will need to create a "background patch" to your plot
 width = R1max - R1min
 height = Kmax - Kmin
@@ -339,6 +325,7 @@ height = Kmax - Kmin
 rect = ax.patch
 rect.set_facecolor((0.9,0.9,0.9))
 
+# set size/shape of colorbar axis
 def pad(data):
     ppad = 38
     mpad = 40
@@ -348,16 +335,23 @@ def pad(data):
     else:
         p = mpad
     return p
-
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="7.5%", pad=0.2, aspect=13.33)
 
+# format colorbar ticks to 1 decimal place
 def fmt(x, pos):
     a = '{:.1f}'.format(x)
     return a
-#cbar.ax.set_yticklabels(['{:.0f}'.format(x) for x in np.arange(cbar_min, cbar_max+cbar_step, cbar_step)])
 cb = plt.colorbar(im, cax=cax, format=matplotlib.ticker.FuncFormatter(fmt))
 
+# Colorbar label
+if 'amp-ratio' in plot_variable:
+    cb_label = r'$R_\mathrm{A}$'
+elif 'min-pert-shift' in plot_variable:
+    cb_label = r'$\Delta_\mathrm{min}$'
+cb.set_label(cb_label, fontsize=25)
+
+# colorbar tick labels
 if 'amp-ratio' in plot_variable:
     if 'kink' in mode:
         cb.set_ticks([0.01,0.1,1.,10.,100])
@@ -367,20 +361,16 @@ if 'amp-ratio' in plot_variable:
         cb.set_ticklabels([r'$-10^{-6}$',r'$-10^{-5}$',r'$-10^{-4}$',r'$-10^{-3}$',
                            r'$-10^{-2}$',r'$-10^{-1}$',r'$-10^{0}$',r'$-10^{1}$',
                            r'$-10^{2}$'])
-#cb.set_ticklabels([mi, 1.,ma])
-#ticklabs = cb.ax.get_yticklabels()
-#cb.ax.set_yticklabels(ticklabs,ha='right')
-#cb.ax.yaxis.set_tick_params(pad=pad(data_set))
-#    
+
+# invert y-axis for sausage modes (since they are negative values)
 if 'saus' in mode and 'amp-ratio' in plot_variable:
     cb.ax.invert_yaxis()
     print('axis inverted')
 
-
-plt.gcf().subplots_adjust(bottom=0.15)
-#plt.tight_layout()
+#plt.gcf().subplots_adjust(bottom=0.15, right=3.)
+plt.tight_layout()
 plt.show()
 
-#filename = mode + '_' + plot_variable
-#plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
-#            + filename)
+filename = mode + '_' + plot_variable
+plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+            + filename)
