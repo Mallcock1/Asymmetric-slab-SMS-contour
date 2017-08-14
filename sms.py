@@ -21,7 +21,6 @@ c0 = 1.
 vA = 1.3
 cT = sc.sqrt(c0**2*vA**2*(c0**2+vA**2)**(-1))
 R2 = 2.
-#c1 = c2*np.sqrt(R2/R1)
 
 mode_options = ['slow-kink-surf', 'slow-saus-surf', 'fast-kink-surf',
                 'fast-saus-surf']
@@ -35,7 +34,7 @@ for mode in mode_options:
     if 'saus' in mode:
         saus_mode_options.append(mode)
 
-mode = mode_options[0]
+mode = mode_options[1]
 
 plot_variable = 'amp-ratio'
 #plot_variable = 'amp-ratio-2'
@@ -300,16 +299,12 @@ else:
 fig = plt.figure()
 aspect = 'auto'
 
-#
+# plot heat map
 im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', norm=norm, 
                 clim=clim(data_set,plot_variable), aspect=aspect, 
                 extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
-contours = plt.contour(data_set.transpose(), colors='black', extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
 
-#Make negative contours solid too.
-matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
 
-plt.clabel(contours, inline=1, fmt='%1.1f', fontsize=14)
 ax = plt.gca()
 
 plt.xlabel(r'$\rho_1/\rho_0$', fontsize=25)
@@ -351,21 +346,46 @@ elif 'min-pert-shift' in plot_variable:
     cb_label = r'$\Delta_\mathrm{min}$'
 cb.set_label(cb_label, fontsize=25)
 
+
 # colorbar tick labels
 if 'amp-ratio' in plot_variable:
     if 'kink' in mode:
-        cb.set_ticks([0.01,0.1,1.,10.,100])
-        cb.set_ticklabels([r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$',r'$10^{1}$',r'$10^{2}$'])
+        cb_ticks = [0.01,0.1,1.,10.,100]
+        cb_ticklabels = [r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$',r'$10^{1}$',r'$10^{2}$']
     elif 'saus' in mode:
-        cb.set_ticks([-0.000001,-0.00001,-0.0001,-0.001,-0.01,-0.1,-1.,-10.,-100])
-        cb.set_ticklabels([r'$-10^{-6}$',r'$-10^{-5}$',r'$-10^{-4}$',r'$-10^{-3}$',
-                           r'$-10^{-2}$',r'$-10^{-1}$',r'$-10^{0}$',r'$-10^{1}$',
-                           r'$-10^{2}$'])
+        cb_ticks = [-100, -10, -1, -0.1, -0.01, -0.001, -0.0001, -0.00001, -0.000001]
+        cb_ticklabels = [r'$-10^{2}$',r'$-10^{1}$',r'$-10^{0}$',r'$-10^{-1}$',
+                           r'$-10^{-2}$',r'$-10^{-3}$',r'$-10^{-4}$',r'$-10^{-5}$',
+                           r'$-10^{-6}$']
+    cb.set_ticks(cb_ticks)
+    cb.set_ticklabels(cb_ticklabels)
+else:
+    cb_ticks = []
+    cb_ticklabels = []
+    for t in cb.ax.get_yticklabels():
+        cb_ticks.append(float(t.get_text()))
+        cb_ticklabels.append(t.get_text())
+
+# overlay individual contours
+contours = ax.contour(data_set.transpose(), levels=cb_ticks, colors='black', 
+                       extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
+
+#Make negative contours solid too.
+matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+
+#set contour labels
+fmt = {}
+for l, t in zip(cb_ticks, cb_ticklabels):
+    fmt[l] = t
+ax.clabel(contours, fmt=fmt, fontsize=14)
+
 
 # invert y-axis for sausage modes (since they are negative values)
 if 'saus' in mode and 'amp-ratio' in plot_variable:
     cb.ax.invert_yaxis()
     print('axis inverted')
+
+
 
 #plt.gcf().subplots_adjust(bottom=0.15, right=3.)
 plt.tight_layout()
