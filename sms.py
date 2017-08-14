@@ -385,8 +385,6 @@ if 'saus' in mode and 'amp-ratio' in plot_variable:
     cb.ax.invert_yaxis()
     print('axis inverted')
 
-
-
 #plt.gcf().subplots_adjust(bottom=0.15, right=3.)
 plt.tight_layout()
 plt.show()

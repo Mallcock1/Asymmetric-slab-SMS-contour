@@ -46,9 +46,9 @@ show_scatter_RA_2 = False
 show_scatter_DM = False
 show_scatter_DM_2 = False
 #
-show_RA = True
+#show_RA = True
 #show_DM = True
-#show_scatter_RA = True
+show_scatter_RA = True
 #show_scatter_RA_2 = True
 #show_scatter_DM = True
 #show_scatter_DM_2 = True

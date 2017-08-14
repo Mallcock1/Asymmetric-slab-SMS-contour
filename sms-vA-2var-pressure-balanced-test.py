@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 10 09:40:37 2017
+Created on Mon Aug 14 15:46:57 2017
 
 @author: Matt
 """
+
 
 import numpy as np
 import scipy as sc
@@ -47,33 +48,39 @@ show_DM = False
 show_scatter_RA = False
 show_scatter_DM = False
 #
-#show_RA = True
+show_RA = True
 #show_DM = True
-show_scatter_RA = True
+#show_scatter_RA = True
 #show_scatter_DM = True
 
 ###############################################################################
+
+#def c1(vA, R1):
+#    return np.sqrt(1/R1 * (c0**2 + 5./6 * vA**2))
+
+def c2(vA):
+    return np.sqrt(1/R2 * (c0**2 + 5./6 * vA**2))
 
 def m0(W, vA):
     m0function = sc.sqrt((c0**2-W**2)*(vA**2-W**2)*((c0**2+vA**2)*(cT(vA)**2-W**2))**(-1))
     return m0function
     
-def m1(W, R1):
-    m1function = sc.sqrt(1-W**2*c2**(-2)*R1*R2**(-1))
+def m1(W, vA, R1):
+    m1function = sc.sqrt(1-W**2*c2(vA)**(-2)*R1*R2**(-1))
     return m1function
 
-def m2(W):
-    m2function = sc.sqrt(1-W**2*c2**(-2))
+def m2(W, vA):
+    m2function = sc.sqrt(1-W**2*c2(vA)**(-2))
     return m2function
 
 def lamb0(W, vA):
     return -(vA**2-W**2)*1.j/(m0(W, vA)*W)
 
-def lamb1(W, R1):
-    return R1*W*1.j/m1(W, R1)
+def lamb1(W, vA, R1):
+    return R1*W*1.j/m1(W, vA, R1)
     
-def lamb2(W):
-    return R2*W*1.j/m2(W)
+def lamb2(W, vA):
+    return R2*W*1.j/m2(W, vA)
 
 error_string_kink_saus = "mode must be 'kink' or 'saus', duh!"
 error_string_subscript = "subscript argument must be 1 or 2"
@@ -81,16 +88,16 @@ error_string_subscript = "subscript argument must be 1 or 2"
 def disp_rel_sym(W, K, vA, R1, mode, subscript):
     if subscript == 1:
         if mode in kink_mode_options:
-            dispfunction = lamb0(W, vA) * sc.tanh(m0(W, vA) * K) + lamb1(W, R1)
+            dispfunction = lamb0(W, vA) * sc.tanh(m0(W, vA) * K) + lamb1(W, vA, R1)
         elif mode in saus_mode_options:
-            dispfunction = lamb0(W, vA) + lamb1(W, R1) * sc.tanh(m0(W, vA) * K)
+            dispfunction = lamb0(W, vA) + lamb1(W, vA, R1) * sc.tanh(m0(W, vA) * K)
         else:
             print(error_string_kink_saus)
     elif subscript == 2:
         if mode in kink_mode_options:
-            dispfunction = lamb0(W, vA) * sc.tanh(m0(W, vA) * K) + lamb2(W)
+            dispfunction = lamb0(W, vA) * sc.tanh(m0(W, vA) * K) + lamb2(W, vA)
         elif mode in saus_mode_options:
-            dispfunction = lamb0(W, vA) + lamb2(W) * sc.tanh(m0(W, vA) * K)
+            dispfunction = lamb0(W, vA) + lamb2(W, vA) * sc.tanh(m0(W, vA) * K)
         else:
             print(error_string_kink_saus)
     else:
@@ -98,8 +105,8 @@ def disp_rel_sym(W, K, vA, R1, mode, subscript):
     return dispfunction
     
 def disp_rel_asym(W, K, vA, R1):
-    return ((W**4 * m0(W, vA)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W, R1) * m2(W) -
-            0.5 * m0(W, vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W, R1) + R1 * m2(W)) *
+    return ((W**4 * m0(W, vA)**2 * R1 * R2 + (vA**2 - W**2)**2 * m1(W, vA, R1) * m2(W, vA) -
+            0.5 * m0(W, vA) * W**2 * (vA**2 - W**2) * (R2 * m1(W, vA, R1) + R1 * m2(W, vA)) *
             (sc.tanh(m0(W, vA) * K) + (sc.tanh(m0(W, vA) * K))**(-1))) /
             (vA**2 - W**2) * (c0**2 - W**2) * (cT(vA)**2 - W**2))
             
@@ -219,14 +226,14 @@ if show_RA == True:
         ax1.set_ylim([0.,3.])
         ax2.set_ylim([0.,3.])
         ax1.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
-        ax1.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
+        ax1.set_ylabel(r'$v_\mathrm{A}/c_0$', fontsize = 20)
         ax1.set_xlabel(r'$R_\mathrm{A}$', fontsize = 20)
         ax2.set_ylabel(r'$\rho_1 / \rho_0$', fontsize = 20)
         
         
         lns = ln1+ln2
         labs = [l.get_label() for l in lns]
-        plt.legend(lns, labs, loc=0, fancybox=True)
+        plt.legend(lns, labs, loc=0, fancybox=True, framealpha=0.7)
         
         
         
@@ -298,8 +305,8 @@ if show_DM == True:
         ax2.set_ylim([0.,5.])
         plt.xlim([-1.2,1.2])
         ax1.fill_between((-1.2, 1.2), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
-        ax1.set_ylabel(r'$v_\mathrm{A}$', fontsize = 20)
-        ax1.set_xlabel(r'$\Delta_\mathrm{min}$', fontsize = 20)
+        ax1.set_ylabel(r'$v_\mathrm{A}/c_0$', fontsize = 20)
+        ax1.set_xlabel(r'$\Delta_\mathrm{min}/x_0$', fontsize = 20)
         ax2.set_ylabel(r'$\rho_1 / \rho_0$', fontsize = 20)
         ax1.fill_between((-1.2, -1.), (0.,0.), (5.,5.), color='lightgray')
         ax1.fill_between((1., 1.2), (0.,0.), (5.,5.), color='lightgray')
@@ -307,9 +314,7 @@ if show_DM == True:
         
         lns = ln1+ln2
         labs = [l.get_label() for l in lns]
-        plt.legend(lns, labs, loc=0)
-        
-        
+        plt.legend(lns, labs, loc=0, framealpha=0.7)
         
         plt.axvline(color='black')
         plt.axvline(x=-1., color='black')
@@ -404,11 +409,11 @@ if show_scatter_DM == True:
 #    plt.xlim([-2., 2.])
 
 
-textstr = (r'$\rho_2/\rho_0=%.1f$' + '\n' + r'$\omega/k=%.1f$' + '\n' + 
+textstr = (r'$\rho_2/\rho_0=%.1f$' + '\n' + r'$\omega/k c_0=%.1f$' + '\n' + 
            r'$kx_0=%.1f$')%(R2, W, K)
 
 # these are matplotlib.patch.Patch properties
-props = dict(boxstyle='round', facecolor='white')
+props = dict(boxstyle='round', facecolor='white', alpha=0.7)
 
 # place a text box in upper left in axes coords
 ax = plt.gca()
