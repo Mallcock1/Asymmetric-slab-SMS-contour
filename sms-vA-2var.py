@@ -47,8 +47,8 @@ show_DM = False
 show_scatter_RA = False
 show_scatter_DM = False
 #
-#show_RA = True
-show_DM = True
+show_RA = True
+#show_DM = True
 #show_scatter_RA = True
 #show_scatter_DM = True
 
@@ -118,6 +118,8 @@ def amp_ratio(W, K, vA, R1, mode):
         print(error_string_kink_saus)
     return ampfunction
 
+W_star = W * c0 / (np.sqrt(c0**2 - W**2))
+
 def amp_ratio_func(W, K, mode, vA, R1, RA):
     return amp_ratio(W, K, vA, R1, mode) - RA
     
@@ -169,18 +171,18 @@ if show_RA == True:
 #    RAmin = [1.01, 0.0, 0.77, -2., -0.7944, -0.7205]
 #    RAmax = [2.0, 0.69, 0.847, -1.1, -0.7, 0.0]
     
-    R1_guess = [1.5, 1.5]
-    vA_guess = [1.23, 1.23]
+    R1_guess = [1.5, 1.5, 2.22]
+    vA_guess = [1.23, 1.23, 1.16]
     
-    RAmin = [2., -2.]
-    RAmax = [-2., 2.]
+    RAmin = [2., -2., -2]
+    RAmax = [-2., 2., 2.]
     NRA = 500
     
 #    step = [0.0005, 0.0005, 0.001, 0.001, 0.0001, 0.0001]
     
     modes = [0,1]#[0,1]
     
-    branches = [1,1]#[3,3]
+    branches = [1,2]#[3,3]
     
     styles = ['--'] * branches[0] + ['-'] * branches[1]
 
@@ -205,11 +207,11 @@ if show_RA == True:
                     return [amp_ratio_func(W, K, mode, vA_R1[0], vA_R1[1], RA),
                             amp_ratio_func_2(W, K, mode, vA_R1[0], vA_R1[1], RA)]
                 if i != 0:
-                    if abs(vA_sol) > 5. or (mode_ind == 0 and RA < 0.) or (mode_ind == 1 and RA > 0.):
+                    if (mode_ind == 0 and RA < 0.) or (mode_ind == 1 and RA > 0.):
                         break
                     else:
                         vA_guess[nb], R1_guess[nb] = vA_sol, R1_sol
-                vA_sol, R1_sol = fsolve(function, [vA_guess[nb], R1_guess[nb]], xtol=1e-05)
+                vA_sol, R1_sol = fsolve(function, [vA_guess[nb], R1_guess[nb]], xtol=1e-08)
                 vA_sols.append(vA_sol)
                 R1_sols.append(R1_sol)
                 RA_sols.append(RA)
@@ -220,8 +222,28 @@ if show_RA == True:
             else:
                 ax1.plot(RA_sols, vA_sols, color='black', linestyle=styles[nb])
                 ax2.plot(RA_sols, R1_sols, color='blue', linestyle=styles[nb])
-#            plt.plot(RA_sols, disp_rel_asym(W, K, np.array(vA_sols), np.array(R1_sols)), color='red', linestyle=styles[nb])
-            
+            plt.plot(RA_sols, disp_rel_asym(W, K, np.array(vA_sols), np.array(R1_sols)), color='red', linestyle=styles[nb])
+        
+            if mode_ind == 0:
+                RA = 1.
+                def function(vA_R1):
+                    return [amp_ratio_func(W, K, mode, vA_R1[0], vA_R1[1], RA),
+                            amp_ratio_func_2(W, K, mode, vA_R1[0], vA_R1[1], RA)]
+                vA_guesses = np.linspace(0.00001, 10., 10)
+                R1_guesses = np.linspace(0.00001, 10., 10)
+                vA_sols = []
+                R1_sols = []                
+                for i,vA in enumerate(vA_guesses):
+                    for R1 in R1_guesses:
+                        vA_sol, R1_sol = fsolve(function, [vA, R1], xtol=1e-08)
+                        vA_sols.append(vA_sol)
+                        R1_sols.append(R1_sol)
+                        print('Finished i = ' + str(i))
+                print('vA_sols has length ' + str(len(vA_sols)))
+                ax1.plot([RA] * len(vA_sols), vA_sols, 'o')
+                ax2.plot([RA] * len(R1_sols), R1_sols, 'o', color='red')
+                
+        
         ax1.set_ylim([0.,3.])
         ax2.set_ylim([0.,3.])
         ax1.fill_between((-2., 2.), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
@@ -232,14 +254,11 @@ if show_RA == True:
         
         lns = ln1+ln2
         labs = [l.get_label() for l in lns]
-        plt.legend(lns, labs, loc=0, fancybox=True, framealpha=0.7)
+        plt.legend(lns, labs, loc=4, fancybox=True, framealpha=0.7)
         
         
         
         plt.axvline(color='black')
-    #    ax.annotate('Body modes', xy=(1.2, 0.65), xycoords='data', annotation_clip=False, fontsize=12)
-    #    ax.annotate('Quasi-kink', xy=(0.15, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
-    #    ax.annotate('Quasi-sausage', xy=(-1., 1.8), xycoords='data', annotation_clip=False, fontsize=15)
         plt.gcf().subplots_adjust(bottom=0.15)
     
 #        filename = 'RA_vA_approx_2var'
@@ -300,8 +319,8 @@ if show_DM == True:
                 ax2.plot(DM_sols, R1_sols, color='blue', linestyle=styles[nb])
             plt.plot(DM_sols, disp_rel_asym(W, K, np.array(vA_sols), np.array(R1_sols)), color='red', linestyle=styles[nb])
             
-        ax1.set_ylim([0.,5.])
-        ax2.set_ylim([0.,5.])
+        ax1.set_ylim([0., 3.])
+        ax2.set_ylim([0., 3.])
         plt.xlim([-1.2,1.2])
         ax1.fill_between((-1.2, 1.2), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
         ax1.set_ylabel(r'$v_\mathrm{A}/c_0$', fontsize = 20)
@@ -313,7 +332,7 @@ if show_DM == True:
         
         lns = ln1+ln2
         labs = [l.get_label() for l in lns]
-        plt.legend(lns, labs, loc=0, framealpha=0.7)
+        plt.legend(lns, labs, loc=4, fancybox=True, framealpha=0.7)
         
         plt.axvline(color='black')
         plt.axvline(x=-1., color='black')
@@ -416,5 +435,5 @@ props = dict(boxstyle='round', facecolor='white', alpha=0.7)
 
 # place a text box in upper left in axes coords
 ax = plt.gca()
-ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=16,
+ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=17,
         verticalalignment='top', bbox=props)
