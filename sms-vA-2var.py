@@ -171,18 +171,18 @@ if show_RA == True:
 #    RAmin = [1.01, 0.0, 0.77, -2., -0.7944, -0.7205]
 #    RAmax = [2.0, 0.69, 0.847, -1.1, -0.7, 0.0]
     
-    R1_guess = [1.5, 1.5, 2.22]
-    vA_guess = [1.23, 1.23, 1.16]
+    R1_guess = [1.5, 1.5]
+    vA_guess = [1.23, 1.23]
     
-    RAmin = [2., -2., -2]
-    RAmax = [-2., 2., 2.]
+    RAmin = [2., -2.]
+    RAmax = [-2., 2.]
     NRA = 500
     
 #    step = [0.0005, 0.0005, 0.001, 0.001, 0.0001, 0.0001]
     
     modes = [0,1]#[0,1]
     
-    branches = [1,2]#[3,3]
+    branches = [1,1]#[3,3]
     
     styles = ['--'] * branches[0] + ['-'] * branches[1]
 
@@ -223,25 +223,6 @@ if show_RA == True:
                 ax1.plot(RA_sols, vA_sols, color='black', linestyle=styles[nb])
                 ax2.plot(RA_sols, R1_sols, color='blue', linestyle=styles[nb])
             plt.plot(RA_sols, disp_rel_asym(W, K, np.array(vA_sols), np.array(R1_sols)), color='red', linestyle=styles[nb])
-        
-            if mode_ind == 0:
-                RA = 1.
-                def function(vA_R1):
-                    return [amp_ratio_func(W, K, mode, vA_R1[0], vA_R1[1], RA),
-                            amp_ratio_func_2(W, K, mode, vA_R1[0], vA_R1[1], RA)]
-                vA_guesses = np.linspace(0.00001, 10., 10)
-                R1_guesses = np.linspace(0.00001, 10., 10)
-                vA_sols = []
-                R1_sols = []                
-                for i,vA in enumerate(vA_guesses):
-                    for R1 in R1_guesses:
-                        vA_sol, R1_sol = fsolve(function, [vA, R1], xtol=1e-08)
-                        vA_sols.append(vA_sol)
-                        R1_sols.append(R1_sol)
-                        print('Finished i = ' + str(i))
-                print('vA_sols has length ' + str(len(vA_sols)))
-                ax1.plot([RA] * len(vA_sols), vA_sols, 'o')
-                ax2.plot([RA] * len(R1_sols), R1_sols, 'o', color='red')
                 
         
         ax1.set_ylim([0.,3.])
@@ -264,6 +245,9 @@ if show_RA == True:
 #        filename = 'RA_vA_approx_2var'
 #        plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
 #                    + filename)
+
+
+
 
 if show_DM == True:
     
