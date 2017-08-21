@@ -47,9 +47,6 @@ show_DM = True
 
 ###############################################################################
 
-#def c1(vA, R1):
-#    return np.sqrt(1/R1 * (c0**2 + 5./6 * vA**2))
-
 def c2(vA):
     return np.sqrt(1/R2 * (c0**2 + 5./6 * vA**2))
 
@@ -268,25 +265,33 @@ if show_RA == True:
                 + filename)
 
 
+
 if show_DM == True:
+    R1_guess = [0.1, 0.1, 0.1]
+    vA_guess = [1.23, 0.9, 0.9]
     
-    R1_guess = [1.5, 0.1]
-    vA_guess = [1.23, 1.23]
+    R1_guess_sym = [2.] * 2
+    vA_guess_sym = [1.25] * 2
     
-    R1_guess_sym = [2., 2.]
-    vA_guess_sym = [1.25, 1.25]
-    
-    DMmin = [0.001, -0.999]
-    DMmax = [1., 1.2]
+    DMmin = [-0.999, 0.9, 0.9]
+    DMmax = [1., -1., 0.976]
     NDM = 500
-    
-#    step = [0.0005, 0.0005, 0.001, 0.001, 0.0001, 0.0001]
+
+#    R1_guess = [0.1, 1.276]
+#    vA_guess = [1.23, 0.988]
+#    
+#    R1_guess_sym = [2., 2.]
+#    vA_guess_sym = [1.25, 1.25]
+#    
+#    DMmin = [-0.999, 0.5]
+#    DMmax = [0.5, 1.]
+#    NDM = 500
     
     modes = [0,1]#[0,1]
     
-    branches = [1,1]#[3,3]
+    branches = [1,2]#[3,3]
     
-    styles = ['--'] + ['-']
+    styles = ['--'] + ['-'] * 2
 
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
@@ -308,7 +313,7 @@ if show_DM == True:
                     return [min_pert_shift_func(W, K, mode, vA_R1[0], vA_R1[1], DM),
                             min_pert_shift_func_2(W, K, mode, vA_R1[0], vA_R1[1], DM)]
                 if i != 0:
-                    if abs(vA_sol) > 5. or (mode_ind == 0 and DM < 0.) or (mode_ind == 1 and DM > 0.):
+                    if abs(vA_sol) > 5.:
                         break
                     else:
                         vA_guess[nb], R1_guess[nb] = vA_sol, R1_sol
@@ -317,7 +322,7 @@ if show_DM == True:
                 R1_sols.append(R1_sol)
                 DM_sols.append(DM)
             
-            if mode_ind == 1:
+            if mode_ind == 1 and nb == 1:
                 ln1 = ln1 + ax1.plot(DM_sols, vA_sols, color='black', linestyle=styles[nb], label=r'$v_\mathrm{A}$')
                 ln2 = ln2 + ax2.plot(DM_sols, R1_sols, color='blue', linestyle=styles[nb], label=r'$\rho_1 / \rho_0$')
             else:
@@ -326,16 +331,16 @@ if show_DM == True:
             plt.plot(DM_sols, disp_rel_asym(W, K, np.array(vA_sols), np.array(R1_sols)), color='red', linestyle=styles[nb])
             
             
-    #add dotted lines to show symmetric inversion
-    DM_sym = 0
-    def function(vA_R1):
-        return [amp_ratio_func(W, K, mode, vA_R1[0], vA_R1[1], DM_sym),
-                amp_ratio_func_2(W, K, mode, vA_R1[0], vA_R1[1], DM_sym)]
-    vA_sol_sym, R1_sol_sym = fsolve(function, [vA_guess_sym[nb], R1_guess_sym[nb]], xtol=1e-08)
-    plt.plot([DM_sym]*2, [0, vA_sol_sym], color='black', linestyle=':')
-    plt.plot([DM_sym]*2, [vA_sol_sym, R1_sol_sym], color='blue', linestyle=':')
-    plt.plot([DM_sym, 2.], [R1_sol_sym]*2, color='blue', linestyle=':')
-    plt.plot([-2., DM_sym], [vA_sol_sym]*2, color='black', linestyle=':')
+        #add dotted lines to show symmetric inversion
+        DM_sym = 0
+        def function(vA_R1):
+            return [amp_ratio_func(W, K, mode, vA_R1[0], vA_R1[1], DM_sym),
+                    amp_ratio_func_2(W, K, mode, vA_R1[0], vA_R1[1], DM_sym)]
+        vA_sol_sym, R1_sol_sym = fsolve(function, [vA_guess_sym[mode_ind], R1_guess_sym[mode_ind]], xtol=1e-08)
+        plt.plot([DM_sym]*2, [0, vA_sol_sym], color='black', linestyle=':')
+        plt.plot([DM_sym]*2, [vA_sol_sym, R1_sol_sym], color='blue', linestyle=':')
+        plt.plot([DM_sym, 2.], [R1_sol_sym]*2, color='blue', linestyle=':')
+        plt.plot([-2., DM_sym], [vA_sol_sym]*2, color='black', linestyle=':')
     
     print(vA_sol_sym, R1_sol_sym)    
     
@@ -373,9 +378,120 @@ if show_DM == True:
             
     plt.gcf().subplots_adjust(bottom=0.15)
 
-    filename = 'DM_vA_approx_2var'
-    plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
-                + filename)
+#    filename = 'DM_vA_approx_2var'
+#    plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+#                + filename)
+
+
+
+#if show_DM == True:
+#    
+#    R1_guess = [1.5, 0.1]
+#    vA_guess = [1.23, 1.23]
+#    
+#    R1_guess_sym = [2., 2.]
+#    vA_guess_sym = [1.25, 1.25]
+#    
+#    DMmin = [0.001, -0.999]
+#    DMmax = [1., 1.2]
+#    NDM = 500
+#    
+##    step = [0.0005, 0.0005, 0.001, 0.001, 0.0001, 0.0001]
+#    
+#    modes = [0,1]#[0,1]
+#    
+#    branches = [1,1]#[3,3]
+#    
+#    styles = ['--'] + ['-']
+#
+#    fig, ax1 = plt.subplots()
+#    ax2 = ax1.twinx()
+#    
+#    ln1 = []
+#    ln2 = []
+#    for mode_ind in modes:
+#        for b in range(branches[mode_ind]):
+#            mode = mode_options[mode_ind]
+#            nb = sum(branches[:mode_ind]) + b
+#            
+#            DM_vals = np.linspace(DMmin[nb], DMmax[nb], NDM)
+#            vA_sols = []            
+#            R1_sols = [] 
+#            DM_sols = []
+#            
+#            for i, DM in enumerate(DM_vals):
+#                def function(vA_R1):
+#                    return [min_pert_shift_func(W, K, mode, vA_R1[0], vA_R1[1], DM),
+#                            min_pert_shift_func_2(W, K, mode, vA_R1[0], vA_R1[1], DM)]
+#                if i != 0:
+#                    if abs(vA_sol) > 5. or (mode_ind == 0 and DM < 0.) or (mode_ind == 1 and DM > 0.):
+#                        break
+#                    else:
+#                        vA_guess[nb], R1_guess[nb] = vA_sol, R1_sol
+#                vA_sol, R1_sol = fsolve(function, [vA_guess[nb], R1_guess[nb]], xtol=1e-05)
+#                vA_sols.append(vA_sol)
+#                R1_sols.append(R1_sol)
+#                DM_sols.append(DM)
+#            
+#            if mode_ind == 1:
+#                ln1 = ln1 + ax1.plot(DM_sols, vA_sols, color='black', linestyle=styles[nb], label=r'$v_\mathrm{A}$')
+#                ln2 = ln2 + ax2.plot(DM_sols, R1_sols, color='blue', linestyle=styles[nb], label=r'$\rho_1 / \rho_0$')
+#            else:
+#                ax1.plot(DM_sols, vA_sols, color='black', linestyle=styles[nb])
+#                ax2.plot(DM_sols, R1_sols, color='blue', linestyle=styles[nb])
+#            plt.plot(DM_sols, disp_rel_asym(W, K, np.array(vA_sols), np.array(R1_sols)), color='red', linestyle=styles[nb])
+#            
+#            
+#    #add dotted lines to show symmetric inversion
+#    DM_sym = 0
+#    def function(vA_R1):
+#        return [amp_ratio_func(W, K, mode, vA_R1[0], vA_R1[1], DM_sym),
+#                amp_ratio_func_2(W, K, mode, vA_R1[0], vA_R1[1], DM_sym)]
+#    vA_sol_sym, R1_sol_sym = fsolve(function, [vA_guess_sym[nb], R1_guess_sym[nb]], xtol=1e-08)
+#    plt.plot([DM_sym]*2, [0, vA_sol_sym], color='black', linestyle=':')
+#    plt.plot([DM_sym]*2, [vA_sol_sym, R1_sol_sym], color='blue', linestyle=':')
+#    plt.plot([DM_sym, 2.], [R1_sol_sym]*2, color='blue', linestyle=':')
+#    plt.plot([-2., DM_sym], [vA_sol_sym]*2, color='black', linestyle=':')
+#    
+#    print(vA_sol_sym, R1_sol_sym)    
+#    
+#    ax1.set_ylim([0., 3.])
+#    ax2.set_ylim([0., 3.])
+#    plt.xlim([-1.2,1.2])
+#    ax1.fill_between((-1.2, 1.2), (W, W), [W * c0 / (np.sqrt(c0**2 - W**2))] * 2, color='lightgray')
+#    ax1.set_ylabel(r'$v_\mathrm{A}/c_0$', fontsize = 20)
+#    ax1.set_xlabel(r'$\Delta_\mathrm{min}/x_0$', fontsize = 20)
+#    ax2.set_ylabel(r'$\rho_1 / \rho_0$', fontsize = 20)
+#    ax1.fill_between((-1.2, -1.), (0.,0.), (5.,5.), color='lightgray')
+#    ax1.fill_between((1., 1.2), (0.,0.), (5.,5.), color='lightgray')
+#    
+#    #legend
+#    lns = ln1+ln2
+#    labs = [l.get_label() for l in lns]
+#    plt.legend(lns, labs, loc=(0.102, 0.775), fancybox=True, framealpha=0.7)
+#    
+#    plt.axvline(color='black')
+#    plt.axvline(x=-1., color='black')
+#    plt.axvline(x=1., color='black')
+#    ax1.annotate('Body modes', xy=(0.5, 0.62), xycoords='data', annotation_clip=False, fontsize=14)
+##    ax.annotate('Quasi-kink', xy=(0.15, 1.8), xycoords='data', annotation_clip=False, fontsize=15)
+##    ax.annotate('Quasi-sausage', xy=(-1., 1.8), xycoords='data', annotation_clip=False, fontsize=15)
+#    
+#    #parameter value overlay
+#    textstr = (r'$\rho_2/\rho_0=%.1f$' + '\n' + r'$\omega/k c_0=%.1f$' + '\n' + 
+#               r'$kx_0=%.1f$')%(R2, W, K)
+#    # these are matplotlib.patch.Patch properties
+#    props = dict(boxstyle='round', facecolor='white', alpha=0.7)
+#    # place a text box in upper left in axes coords
+#    ax = plt.gca()
+#    ax.text(0.693, 0.955, textstr, transform=ax.transAxes, fontsize=17,
+#            verticalalignment='top', bbox=props)
+#            
+#    plt.gcf().subplots_adjust(bottom=0.15)
+#
+#    filename = 'DM_vA_approx_2var'
+#    plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
+#                + filename)
 
 
 if show_scatter_RA == True:
