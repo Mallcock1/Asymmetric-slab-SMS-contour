@@ -121,7 +121,7 @@ def min_pert_shift(W, K, R1, mode):
         shiftfunction = (1 / m0(W)) * sc.arctanh(- disp_rel_sym(W,K,R1,'kink',1) / disp_rel_sym(W,K,R1,'saus',1))
     else:
         print(error_string_kink_saus)
-    return shiftfunction
+    return shiftfunction / K # /K so that it is \Delta_min / x_0 rather than k * \Delta_min
     
 def min_pert_shift_2(W, K, R1, mode):
     if mode in kink_mode_options:
@@ -131,7 +131,7 @@ def min_pert_shift_2(W, K, R1, mode):
         shiftfunction = (1 / m0(W)) * sc.arctanh(disp_rel_sym(W,K,R1,'kink',2) / disp_rel_sym(W,K,R1,'saus',2))
     else:
         print(error_string_kink_saus)
-    return shiftfunction
+    return shiftfunction / K # /K * so that it is \Delta_min / x_0 rather than k * \Delta_min
 
 def cutoff(R1):
     c1 = c2*np.sqrt(R2/R1)
@@ -155,8 +155,8 @@ def trans(R1):
 # Set up the data
 
 #number of iternations in R1 and K
-NR1 = 70 #100
-NK = 70 #400 for fast kink surf? #100
+NR1 = 100 #100
+NK = NR1 #400 for fast kink surf? #100
 
 Kmax1 = 8. #5.
 R1max1 = 4.
@@ -294,8 +294,7 @@ if 'amp-ratio' in plot_variable:
 else:
     norm = None
         
-
-
+#initialise figure
 fig = plt.figure()
 aspect = 'auto'
 
@@ -303,7 +302,6 @@ aspect = 'auto'
 im = plt.imshow(data_set.transpose(), cmap=cmap, origin='lower', norm=norm, 
                 clim=clim(data_set,plot_variable), aspect=aspect, 
                 extent=[R1vals[0],R1vals[-1],Kvals[0],Kvals[-1]])
-
 
 ax = plt.gca()
 
@@ -343,7 +341,7 @@ cb = plt.colorbar(im, cax=cax, format=matplotlib.ticker.FuncFormatter(fmt))
 if 'amp-ratio' in plot_variable:
     cb_label = r'$R_\mathrm{A}$'
 elif 'min-pert-shift' in plot_variable:
-    cb_label = r'$\Delta_\mathrm{min}$'
+    cb_label = r'$\Delta_\mathrm{min} / x_0$'
 cb.set_label(cb_label, fontsize=25)
 
 
@@ -351,20 +349,24 @@ cb.set_label(cb_label, fontsize=25)
 if 'amp-ratio' in plot_variable:
     if 'kink' in mode:
         cb_ticks = [0.01,0.1,1.,10.,100]
-        cb_ticklabels = [r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$',r'$10^{1}$',r'$10^{2}$']
+        cb_ticklabels = [r'$10^{-2}$',r'$10^{-1}$',r'$1$',r'$10^{1}$',r'$10^{2}$']
     elif 'saus' in mode:
         cb_ticks = [-100, -10, -1, -0.1, -0.01, -0.001, -0.0001, -0.00001, -0.000001]
-        cb_ticklabels = [r'$-10^{2}$',r'$-10^{1}$',r'$-10^{0}$',r'$-10^{-1}$',
+        cb_ticklabels = [r'$-10^{2}$',r'$-10^{1}$',r'$-1$',r'$-10^{-1}$',
                            r'$-10^{-2}$',r'$-10^{-3}$',r'$-10^{-4}$',r'$-10^{-5}$',
                            r'$-10^{-6}$']
     cb.set_ticks(cb_ticks)
     cb.set_ticklabels(cb_ticklabels)
-else:
+    #larger font size due to latex labels.
+    cb.ax.tick_params(labelsize=20)
+elif 'min-pert-shift':
     cb_ticks = []
     cb_ticklabels = []
-    for t in cb.ax.get_yticklabels():
-        cb_ticks.append(float(t.get_text()))
-        cb_ticklabels.append(t.get_text())
+    for i,t in enumerate(cb.ax.get_yticklabels()):
+        tick = t.get_text()
+        if i % 2 == 1:
+            cb_ticks.append(float(tick))
+            cb_ticklabels.append(tick)
 
 # overlay individual contours
 contours = ax.contour(data_set.transpose(), levels=cb_ticks, colors='black', 
@@ -377,7 +379,7 @@ matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
 fmt = {}
 for l, t in zip(cb_ticks, cb_ticklabels):
     fmt[l] = t
-ax.clabel(contours, fmt=fmt, fontsize=14)
+ax.clabel(contours, fmt=fmt, fontsize=20)
 
 
 # invert y-axis for sausage modes (since they are negative values)
@@ -389,6 +391,7 @@ if 'saus' in mode and 'amp-ratio' in plot_variable:
 plt.tight_layout()
 plt.show()
 
+# save
 filename = mode + '_' + plot_variable
 plt.savefig('D:\\my_work\\projects\\Asymmetric_slab\\Python\\sms\\sms-plots\\' 
             + filename)
