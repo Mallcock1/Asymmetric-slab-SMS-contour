@@ -338,8 +338,8 @@ if show_DM == True:
     ax1.set_ylabel(r'$v_\mathrm{A}/c_0$', fontsize = 20)
     ax1.set_xlabel(r'$\Delta_\mathrm{min}/x_0$', fontsize = 20)
     ax2.set_ylabel(r'$\rho_1 / \rho_0$', fontsize = 20)
-    ax1.fill_between((-1.2, -1.), (0.,0.), (5.,5.), color='lightgray')
-    ax1.fill_between((1., 1.2), (0.,0.), (5.,5.), color='lightgray')
+    ax1.fill_between((-1.2, -1.), (0.,0.), (5.,5.), color='gray')
+    ax1.fill_between((1., 1.2), (0.,0.), (5.,5.), color='gray')
     
     #legend
     lns = ln1+ln2
