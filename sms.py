@@ -16,11 +16,13 @@ import shiftedcolormap as scm
 
 # SBS
 # Define the sound speeds and alfven speeds.
-c2 = 1.2
 c0 = 1.
 vA = 1.3
 cT = sc.sqrt(c0**2*vA**2*(c0**2+vA**2)**(-1))
 R2 = 2.
+
+#to maintain pressure balance
+c2 = np.sqrt(1/R2 * (c0**2 + 5./6 * vA**2))
 
 mode_options = ['slow-kink-surf', 'slow-saus-surf', 'fast-kink-surf',
                 'fast-saus-surf']
@@ -36,9 +38,9 @@ for mode in mode_options:
 
 mode = mode_options[1]
 
-plot_variable = 'amp-ratio'
+#plot_variable = 'amp-ratio'
 #plot_variable = 'amp-ratio-2'
-#plot_variable = 'min-pert-shift'
+plot_variable = 'min-pert-shift'
 #plot_variable = 'min-pert-shift-2'
 #plot_variable = 'W'
 

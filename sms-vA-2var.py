@@ -346,10 +346,10 @@ if show_DM == True:
     labs = [l.get_label() for l in lns]
     plt.legend(lns, labs, loc=(0.102, 0.775), fancybox=True, framealpha=0.7)
     
-    plt.axvline(color='black')
+#    plt.axvline(color='black')
     plt.axvline(x=-1., color='black')
     plt.axvline(x=1., color='black')
-    ax1.annotate('Body modes', xy=(0.03, 0.62), xycoords='data', annotation_clip=False, fontsize=14)
+    ax1.annotate('Body modes', xy=(0.3, 0.62), xycoords='data', annotation_clip=False, fontsize=14)
     
     #parameter value overlay
     textstr = (r'$\rho_2/\rho_0=%.1f$' + '\n' + r'$\omega/k c_0=%.1f$' + '\n' + 
